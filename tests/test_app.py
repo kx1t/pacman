@@ -7,3 +7,35 @@ def test_index_page_loads():
 
     assert response.status_code == 200
     assert b"Pacman Simulator" in response.data
+
+
+def test_high_score_defaults_when_missing(monkeypatch, tmp_path):
+    monkeypatch.setenv("HIGH_SCORE_FILE", str(tmp_path / "highscore.json"))
+    client = app.test_client()
+
+    response = client.get("/api/highscore")
+    assert response.status_code == 200
+    assert response.get_json() == {"score": 0, "name": "N/A"}
+
+
+def test_high_score_persists_to_file(monkeypatch, tmp_path):
+    target = tmp_path / "highscore.json"
+    monkeypatch.setenv("HIGH_SCORE_FILE", str(target))
+    client = app.test_client()
+
+    post_response = client.post("/api/highscore", json={"score": 77, "name": "Ramon"})
+    assert post_response.status_code == 200
+    assert post_response.get_json() == {"score": 77, "name": "Ramon"}
+
+    get_response = client.get("/api/highscore")
+    assert get_response.status_code == 200
+    assert get_response.get_json() == {"score": 77, "name": "Ramon"}
+    assert target.exists()
+
+
+def test_high_score_rejects_invalid_payload(monkeypatch, tmp_path):
+    monkeypatch.setenv("HIGH_SCORE_FILE", str(tmp_path / "highscore.json"))
+    client = app.test_client()
+
+    response = client.post("/api/highscore", json={"score": -1, "name": "bad"})
+    assert response.status_code == 400

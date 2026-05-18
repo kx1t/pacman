@@ -10,3 +10,9 @@ services:
       - "${APP_PORT}:80"
     environment:
       - PORT=80
+      - HIGH_SCORE_FILE=${HIGH_SCORE_FILE}
+    volumes:
+      - pacman_data:/data
+
+volumes:
+  pacman_data:

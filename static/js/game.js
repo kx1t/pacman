@@ -43,6 +43,8 @@
   let animationFrame = null;
   let queuedDirection = null;
   let mouthFrames = 0;
+  let cachedHighScore = 0;
+  let cachedHighScorer = "N/A";
 
   function randomInt(max) {
     return Math.floor(Math.random() * max);
@@ -314,14 +316,59 @@
       flashingUntil: 0,
       isRunning: false,
       promptShown: false,
-      highScore: Number(localStorage.getItem("pacman.highScore") || 0),
-      highScorer: localStorage.getItem("pacman.highScorer") || "N/A",
+      pendingHighScoreName: false,
+      highScore: cachedHighScore,
+      highScorer: cachedHighScorer,
     };
 
     placePellets(state);
     state.pacman = { ...choosePacmanStart(state), dir: DIRS.LEFT };
     state.ghosts = createGhosts(state);
     return state;
+  }
+
+  async function fetchHighScore() {
+    try {
+      const response = await fetch("/api/highscore", {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+      });
+      if (!response.ok) {
+        return;
+      }
+      const payload = await response.json();
+      cachedHighScore = Number(payload.score || 0);
+      cachedHighScorer = (payload.name || "N/A").trim() || "N/A";
+    } catch (_err) {
+      cachedHighScore = 0;
+      cachedHighScorer = "N/A";
+    }
+  }
+
+  async function saveHighScore(score, name) {
+    const response = await fetch("/api/highscore", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({ score, name }),
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const payload = await response.json();
+    cachedHighScore = Number(payload.score || 0);
+    cachedHighScorer = (payload.name || "N/A").trim() || "N/A";
+    return true;
+  }
+
+  function syncHud() {
+    scoreEl.textContent = String(gameState.score);
+    highScoreEl.textContent = String(gameState.highScore);
+    highScorerEl.textContent = gameState.highScorer;
   }
 
   function resizeCanvas() {
@@ -346,12 +393,8 @@
 
     if (value > gameState.highScore) {
       gameState.highScore = value;
+      gameState.pendingHighScoreName = true;
       highScoreEl.textContent = String(gameState.highScore);
-      if (!gameState.promptShown) {
-        gameState.promptShown = true;
-        modal.classList.remove("hidden");
-        nameInput.focus();
-      }
     }
   }
 
@@ -359,8 +402,21 @@
     const normalized = name.trim() || "Player";
     gameState.highScorer = normalized;
     highScorerEl.textContent = normalized;
-    localStorage.setItem("pacman.highScore", String(gameState.highScore));
-    localStorage.setItem("pacman.highScorer", normalized);
+    cachedHighScorer = normalized;
+  }
+
+  function finishGame({ won, buttonText }) {
+    gameState.won = won;
+    gameState.gameOver = true;
+    stopLoop();
+    startBtn.textContent = buttonText;
+    startBtn.classList.remove("hidden");
+
+    if (gameState.pendingHighScoreName && !gameState.promptShown) {
+      gameState.promptShown = true;
+      modal.classList.remove("hidden");
+      nameInput.focus();
+    }
   }
 
   function consumeAtPacman() {
@@ -381,11 +437,7 @@
     }
 
     if (gameState.pellets.size === 0) {
-      gameState.won = true;
-      gameState.gameOver = true;
-      stopLoop();
-      startBtn.textContent = "You won - Play Again";
-      startBtn.classList.remove("hidden");
+      finishGame({ won: true, buttonText: "You won - Play Again" });
     }
   }
 
@@ -494,10 +546,7 @@
           ghost.retired = true;
           setScore(gameState.score + 25);
         } else {
-          gameState.gameOver = true;
-          stopLoop();
-          startBtn.textContent = "Game Over - Play Again";
-          startBtn.classList.remove("hidden");
+          finishGame({ won: false, buttonText: "Game Over - Play Again" });
           return;
         }
       }
@@ -655,26 +704,29 @@
     }
   }
 
-  function startGame() {
+  function initializeBoard() {
+    gameState = initState();
+    queuedDirection = DIRS.LEFT;
+    mouthFrames = 0;
+    syncHud();
+  }
+
+  async function startGame() {
     stopLoop();
     if (animationFrame) {
       cancelAnimationFrame(animationFrame);
     }
 
-    gameState = initState();
-    queuedDirection = DIRS.LEFT;
-    mouthFrames = 0;
-
-    scoreEl.textContent = "0";
-    highScoreEl.textContent = String(gameState.highScore);
-    highScorerEl.textContent = gameState.highScorer;
+    await fetchHighScore();
+    initializeBoard();
 
     startBtn.classList.add("hidden");
     modal.classList.add("hidden");
 
+    // Render immediately so pellets and super-pellets are visible before movement begins.
+    render();
     pacmanTimer = setInterval(movePacman, PACMAN_TICK_MS);
     ghostTimer = setInterval(moveGhosts, GHOST_TICK_MS);
-    render();
   }
 
   window.addEventListener("keydown", (event) => {
@@ -688,8 +740,13 @@
 
   startBtn.addEventListener("click", startGame);
 
-  nameSubmit.addEventListener("click", () => {
-    updateHighScorer(nameInput.value);
+  nameSubmit.addEventListener("click", async () => {
+    const chosenName = nameInput.value;
+    const saved = await saveHighScore(gameState.highScore, chosenName);
+    if (saved) {
+      updateHighScorer(cachedHighScorer);
+      gameState.pendingHighScoreName = false;
+    }
     modal.classList.add("hidden");
     nameInput.value = "";
   });
@@ -697,8 +754,9 @@
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
 
-  gameState = initState();
-  highScoreEl.textContent = String(gameState.highScore);
-  highScorerEl.textContent = gameState.highScorer;
-  render();
+  (async () => {
+    await fetchHighScore();
+    initializeBoard();
+    render();
+  })();
 })();
