@@ -563,7 +563,7 @@
       for (let x = 0; x < COLS; x += 1) {
         const tile = gameState.grid[y][x];
         if (tile === TILE.PATH || tile === TILE.GHOST_HOUSE) {
-          ctx.fillStyle = "#3a9eff";
+          ctx.fillStyle = "#000000";
           ctx.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
         }
       }
@@ -634,7 +634,7 @@
       mouthFrames -= 1;
     }
 
-    ctx.fillStyle = "#5bbfff";
+    ctx.fillStyle = "#ffffff";
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.arc(centerX, centerY, radius, angle + mouthOpen, angle - mouthOpen + Math.PI * 2, false);
