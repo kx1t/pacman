@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pacman Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hud" aria-label="Game score board">
+      <div>Score: <span id="score">0</span></div>
+      <div>High Score: <span id="high-score">0</span></div>
+      <div>High Scorer: <span id="high-scorer">N/A</span></div>
+    </header>
+
+    <div class="board-wrap">
+      <canvas id="game-canvas" aria-label="Pacman game board"></canvas>
+      <button id="start-btn" type="button">Start Game</button>
+    </div>
+  </main>
+
+  <div id="name-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="name-title">
+    <div class="modal-card">
+      <h2 id="name-title">New High Score</h2>
+      <p>Enter your name:</p>
+      <input id="name-input" type="text" maxlength="20" placeholder="Player" />
+      <button id="name-submit" type="button">Save</button>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>

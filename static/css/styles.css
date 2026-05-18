@@ -1,0 +1,147 @@
+:root {
+  --bg-1: #02061f;
+  --bg-2: #05154f;
+  --panel: rgba(4, 14, 54, 0.7);
+  --line: #8be9ff;
+  --text: #f1f1f1;
+  --accent: #f7d745;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Press Start 2P", monospace;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 15% 15%, #132f8f 0%, transparent 35%),
+    radial-gradient(circle at 80% 20%, #102574 0%, transparent 32%),
+    linear-gradient(160deg, var(--bg-1), var(--bg-2));
+}
+
+body {
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.app-shell {
+  width: min(1100px, 100%);
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  padding: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.board-wrap {
+  position: relative;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+#game-canvas {
+  width: min(80vw, 1000px);
+  height: min(80vh, 900px);
+  border: 4px solid var(--line);
+  box-shadow:
+    0 0 0 4px rgba(0, 0, 0, 0.2),
+    0 0 34px rgba(62, 144, 255, 0.35);
+  image-rendering: pixelated;
+  background: #041044;
+}
+
+#start-btn {
+  position: absolute;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 2px solid #fff;
+  background: #121212;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.78rem;
+  padding: 0.8rem 1.1rem;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+#start-btn.hidden,
+.hidden {
+  display: none;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.66);
+  display: grid;
+  place-items: center;
+  z-index: 20;
+}
+
+.modal-card {
+  border: 3px solid var(--line);
+  background: #071957;
+  padding: 1.2rem;
+  width: min(500px, 90vw);
+  animation: pop-in 220ms ease-out;
+}
+
+.modal-card h2 {
+  margin-top: 0;
+  font-size: 0.92rem;
+}
+
+.modal-card p {
+  font-size: 0.68rem;
+}
+
+.modal-card input,
+.modal-card button {
+  width: 100%;
+  border: 2px solid #fff;
+  background: #000;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.7rem;
+  padding: 0.7rem;
+}
+
+.modal-card input {
+  margin-bottom: 0.7rem;
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .hud {
+    grid-template-columns: 1fr;
+    font-size: 0.64rem;
+  }
+
+  #start-btn {
+    font-size: 0.62rem;
+  }
+}
