@@ -755,6 +755,7 @@
   window.addEventListener("resize", resizeCanvas);
 
   (async () => {
+    modal.classList.add("hidden");
     await fetchHighScore();
     initializeBoard();
     render();

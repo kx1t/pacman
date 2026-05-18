@@ -92,6 +92,10 @@ body {
   z-index: 20;
 }
 
+.modal.hidden {
+  display: none !important;
+}
+
 .modal-card {
   border: 3px solid var(--line);
   background: #071957;
