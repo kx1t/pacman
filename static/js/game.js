@@ -800,6 +800,30 @@
       }
     }
 
+    // Dashed pen boundary: clearly marks ghost house as inaccessible for Pacman.
+    const penWidth = gameState.ghostHouse.right - gameState.ghostHouse.left + 1;
+    const penHeight = gameState.ghostHouse.bottom - gameState.ghostHouse.top + 1;
+    ctx.strokeStyle = PALETTE.border;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([Math.max(2, cellSize * 0.22), Math.max(2, cellSize * 0.14)]);
+    ctx.strokeRect(
+      offsetX + gameState.ghostHouse.left * cellSize + 0.5,
+      offsetY + gameState.ghostHouse.top * cellSize + 0.5,
+      penWidth * cellSize - 1,
+      penHeight * cellSize - 1
+    );
+    ctx.setLineDash([]);
+
+    // Side tunnels: draw outward openings so gateways read as open passages.
+    ctx.fillStyle = PALETTE.path;
+    for (const gateY of gameState.gateRows) {
+      const tunnelY = offsetY + gateY * cellSize;
+      const tunnelH = Math.max(2, cellSize);
+      const lip = Math.max(3, Math.floor(cellSize * 0.45));
+      ctx.fillRect(offsetX - lip, tunnelY, lip + 1, tunnelH);
+      ctx.fillRect(offsetX + COLS * cellSize - 1, tunnelY, lip + 1, tunnelH);
+    }
+
     // Thin white border lines along every path↔wall edge
     ctx.strokeStyle = PALETTE.border;
     ctx.lineWidth = 1;
@@ -811,12 +835,19 @@
         }
         const px = offsetX + x * cellSize;
         const py = offsetY + y * cellSize;
+        const isGateRow = gameState.gateRows.includes(y);
         // Left edge
-        if (x === 0 || (gameState.grid[y][x - 1] !== TILE.PATH && gameState.grid[y][x - 1] !== TILE.GHOST_HOUSE)) {
+        const drawLeftEdge =
+          (x === 0 && !isGateRow)
+          || (x > 0 && gameState.grid[y][x - 1] !== TILE.PATH && gameState.grid[y][x - 1] !== TILE.GHOST_HOUSE);
+        if (drawLeftEdge) {
           ctx.beginPath(); ctx.moveTo(px + 0.5, py); ctx.lineTo(px + 0.5, py + cellSize); ctx.stroke();
         }
         // Right edge
-        if (x === COLS - 1 || (gameState.grid[y][x + 1] !== TILE.PATH && gameState.grid[y][x + 1] !== TILE.GHOST_HOUSE)) {
+        const drawRightEdge =
+          (x === COLS - 1 && !isGateRow)
+          || (x < COLS - 1 && gameState.grid[y][x + 1] !== TILE.PATH && gameState.grid[y][x + 1] !== TILE.GHOST_HOUSE);
+        if (drawRightEdge) {
           ctx.beginPath(); ctx.moveTo(px + cellSize - 0.5, py); ctx.lineTo(px + cellSize - 0.5, py + cellSize); ctx.stroke();
         }
         // Top edge
@@ -828,17 +859,6 @@
           ctx.beginPath(); ctx.moveTo(px, py + cellSize - 0.5); ctx.lineTo(px + cellSize, py + cellSize - 0.5); ctx.stroke();
         }
       }
-    }
-
-    for (const y of gameState.gateRows) {
-      ctx.fillStyle = "#ffff00";
-      ctx.fillRect(offsetX, offsetY + y * cellSize + cellSize * 0.35, cellSize, cellSize * 0.3);
-      ctx.fillRect(
-        offsetX + (COLS - 1) * cellSize,
-        offsetY + y * cellSize + cellSize * 0.35,
-        cellSize,
-        cellSize * 0.3
-      );
     }
   }
 
