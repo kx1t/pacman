@@ -999,8 +999,33 @@
     ghostTimer = setInterval(moveGhosts, GHOST_TICK_MS);
   }
 
+  async function submitHighScoreName() {
+    const chosenName = nameInput.value;
+    const saved = await saveHighScore(gameState.highScore, chosenName);
+    if (saved) {
+      updateHighScorer(cachedHighScorer);
+      gameState.pendingHighScoreName = false;
+    }
+    modal.classList.add("hidden");
+    nameInput.value = "";
+  }
+
   window.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
+
+    if (key === "enter") {
+      if (!modal.classList.contains("hidden")) {
+        event.preventDefault();
+        submitHighScoreName();
+        return;
+      }
+      if (!startBtn.classList.contains("hidden")) {
+        event.preventDefault();
+        startGame();
+        return;
+      }
+    }
+
     if (!KEY_TO_DIR[key]) {
       return;
     }
@@ -1010,16 +1035,7 @@
 
   startBtn.addEventListener("click", startGame);
 
-  nameSubmit.addEventListener("click", async () => {
-    const chosenName = nameInput.value;
-    const saved = await saveHighScore(gameState.highScore, chosenName);
-    if (saved) {
-      updateHighScorer(cachedHighScorer);
-      gameState.pendingHighScoreName = false;
-    }
-    modal.classList.add("hidden");
-    nameInput.value = "";
-  });
+  nameSubmit.addEventListener("click", submitHighScoreName);
 
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
