@@ -24,33 +24,40 @@ Browser-based Pacman game simulation built with Flask and vanilla JavaScript.
 
 ## Run Locally
 
-1. Create and activate a virtual environment.
-2. Install dependencies.
+1. Create and activate a Python virtual environment.
+2. Install dependencies into the venv.
 3. Start the Flask app.
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
 
-Open <http://localhost:8000>.
+Open <http://localhost:8000> (or the port specified in the dev server output).
+
+**Note:** Local development always uses venv for isolation. Never run pip outside a venv on your machine.
 
 ## Docker
 
-Build and run with Docker Compose:
+Build and run with Docker Compose (no venv used inside container):
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-The app is exposed on `APP_PORT` from `.env`.
+The app is exposed on `APP_PORT` from `.env` (default: 19999 maps to container port 80).
+
+High scores persist via the `pacman_data` Docker volume at `/data/highscore.json`.
 
 ## Test
 
+Ensure the venv is activated, then run tests:
+
 ```bash
+source .venv/bin/activate
 pytest -q
 ```
 

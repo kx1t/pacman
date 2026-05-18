@@ -67,6 +67,54 @@ Your job is to scaffold the right framework baseline quickly, safely, and with m
 7. If access succeeds and a new deployment directory is needed, create it with `sudo mkdir -p /opt/directory -m 0777` using the user-provided path.
 8. Create or update `docker-compose.yml` and the accompanying `.env` file in that directory.
 
+## Python Dependency and Deployment Optimization
+
+### Local Development (venv required)
+- Always create and use a Python virtual environment for local testing and development.
+- Document venv activation in README and deployment instructions.
+- Example: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
+
+### Container Deployment (no venv)
+- **Never use venv inside containers.** Containers are immutable deployment units; venv adds unnecessary complexity and size.
+- When installing Python packages in Dockerfile, use `pip install --break-system-packages` to bypass the PEP 668 restriction.
+- Set `PIP_NO_INPUT=1` and `PIP_DISABLE_PIP_VERSION_CHECK=1` environment variables to streamline pip operations.
+
+### Dependency Installation Preference (Container)
+1. **Prefer apt-based system packages** when available (e.g., system libraries, tools). Use `apt-get install --no-install-recommends` and clean up with `rm -rf /var/lib/apt/lists/*` to minimize layer size.
+2. **Fall back to pip** for Python packages not available in apt repositories. Use `pip install --no-cache-dir --break-system-packages`.
+
+### Dockerfile Layer Optimization for Caching
+- Organize layers from least-frequently-changed to most-frequently-changed:
+  1. Base image and system environment setup
+  2. System dependencies (apt)
+  3. Python dependencies (pip from requirements.txt)
+  4. Application source code (last, so code changes don't rebuild everything)
+- This strategy ensures that when only application code changes, Docker layer cache reuses the dependency layer, reducing build time dramatically.
+- Example layer order:
+  ```dockerfile
+  FROM python:3.12-slim
+  # Base and env setup
+  ENV ... 
+  # System dependencies
+  RUN apt-get update && apt-get install -y ... && rm -rf /var/lib/apt/lists/*
+  # Python dependencies (layer 3)
+  COPY requirements.txt .
+  RUN pip install --break-system-packages -r requirements.txt
+  # App code (layer 4 - only this rebuilds on code changes)
+  COPY . .
+  CMD ...
+  ```
+
+### GitHub Actions: Parallel Multi-Arch Build with Aggressive Caching
+- Use `docker/setup-buildx-action@v3` with explicit buildkit driver configuration.
+- In `docker/build-push-action@v6`, include:
+  - `platforms: linux/amd64,linux/arm64` (buildx builds these architectures in parallel)
+  - `cache-from: type=gha` and `cache-to: type=gha,mode=max` (use GitHub Actions cache backend for layer caching across runs)
+- This configuration:
+  - Builds both target architectures simultaneously via buildx.
+  - Caches all build layers in GitHub Actions cache, so repeated builds (even for different branches) reuse unchanged layers.
+  - Dramatically reduces build time for iterative development and minor source updates.
+
 ## Testing Requirements
 - Whenever you implement a feature or make code changes, run a unit test or other focused verification for the touched slice.
 - Verify the implementation works correctly.
