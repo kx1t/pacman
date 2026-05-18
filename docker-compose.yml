@@ -4,7 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile
       platforms:
+        # linux/amd64 target covers Intel Linux, Intel Mac via Docker, and Windows via Docker Desktop + WSL2.
         - linux/amd64
+        # linux/arm64 target covers ARM Linux and Apple Silicon Mac via Docker.
         - linux/arm64
     ports:
       - "${APP_PORT}:80"

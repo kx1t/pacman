@@ -38,9 +38,12 @@ jobs:
           - arch: amd64
             platform: linux/amd64
             runner: ubuntu-24.04
+            targets: Intel Linux, Intel Mac (Docker), Windows (Docker Desktop + WSL2)
           - arch: arm64
             platform: linux/arm64
             runner: ubuntu-24.04-arm
+            targets: ARM Linux, Apple Silicon Mac (Docker)
+    name: Build ${{ matrix.platform }} for ${{ matrix.targets }}
     runs-on: ${{ matrix.runner }}
     env:
       IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
