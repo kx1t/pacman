@@ -556,20 +556,20 @@
   function drawGrid() {
     const { cellSize, offsetX, offsetY } = cellMetrics();
 
-    ctx.fillStyle = "#041044";
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     for (let y = 0; y < ROWS; y += 1) {
       for (let x = 0; x < COLS; x += 1) {
         const tile = gameState.grid[y][x];
         if (tile === TILE.PATH || tile === TILE.GHOST_HOUSE) {
-          ctx.fillStyle = "#ffffff";
+          ctx.fillStyle = "#3a9eff";
           ctx.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
         }
       }
     }
 
-    ctx.fillStyle = "#041044";
+    ctx.fillStyle = "#000000";
     for (let y = gameState.ghostHouse.top; y <= gameState.ghostHouse.bottom; y += 1) {
       for (let x = gameState.ghostHouse.left; x <= gameState.ghostHouse.right; x += 1) {
         ctx.fillRect(
@@ -582,7 +582,7 @@
     }
 
     for (const y of gameState.gateRows) {
-      ctx.fillStyle = "#9ad9ff";
+      ctx.fillStyle = "#ffff00";
       ctx.fillRect(offsetX, offsetY + y * cellSize + cellSize * 0.35, cellSize, cellSize * 0.3);
       ctx.fillRect(
         offsetX + (COLS - 1) * cellSize,
@@ -599,7 +599,7 @@
       const [x, y] = key.split(",").map(Number);
       const isSuper = gameState.superPellets.has(key);
       const radius = isSuper ? cellSize * 0.16 : cellSize * 0.08;
-      ctx.fillStyle = "#f5f5f5";
+      ctx.fillStyle = isSuper ? "#ff3333" : "#ff69b4";
       ctx.beginPath();
       ctx.arc(
         offsetX + x * cellSize + cellSize / 2,
@@ -634,7 +634,7 @@
       mouthFrames -= 1;
     }
 
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#5bbfff";
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.arc(centerX, centerY, radius, angle + mouthOpen, angle - mouthOpen + Math.PI * 2, false);

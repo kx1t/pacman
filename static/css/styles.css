@@ -60,7 +60,7 @@ body {
     0 0 0 4px rgba(0, 0, 0, 0.2),
     0 0 34px rgba(62, 144, 255, 0.35);
   image-rendering: pixelated;
-  background: #041044;
+  background: #000000;
 }
 
 #start-btn {
