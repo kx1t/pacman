@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 from threading import Lock
+import re
 
 from flask import Flask, jsonify, render_template, request
 
@@ -14,9 +15,59 @@ DEFAULT_HIGH_SCORE = {
     "name": "N/A",
 }
 
+DEFAULT_GAME_CONFIG = {
+    "rows": 31,
+    "cols": 28,
+    "palette": {
+        "wall": "#0d1047",
+        "path": "#000000",
+        "pacman": "#ffffff",
+        "pellet": "#ff80c8",
+        "superPellet": "#ff0000",
+        "border": "#ffffff",
+    },
+}
+
+HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
 
 def high_score_file() -> Path:
     return Path(os.getenv("HIGH_SCORE_FILE", "/data/highscore.json"))
+
+
+def get_int_env(name: str, default: int, minimum: int, maximum: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        return default
+    return max(minimum, min(maximum, value))
+
+
+def get_color_env(name: str, default: str) -> str:
+    value = (os.getenv(name, default) or "").strip()
+    if HEX_COLOR_RE.match(value):
+        return value.lower()
+    return default
+
+
+def game_config() -> dict:
+    return {
+        "rows": get_int_env("MAZE_ROWS", DEFAULT_GAME_CONFIG["rows"], 21, 61),
+        "cols": get_int_env("MAZE_COLS", DEFAULT_GAME_CONFIG["cols"], 21, 61),
+        "palette": {
+            "wall": get_color_env("COLOR_WALL", DEFAULT_GAME_CONFIG["palette"]["wall"]),
+            "path": get_color_env("COLOR_PATH", DEFAULT_GAME_CONFIG["palette"]["path"]),
+            "pacman": get_color_env("COLOR_PACMAN", DEFAULT_GAME_CONFIG["palette"]["pacman"]),
+            "pellet": get_color_env("COLOR_PELLET", DEFAULT_GAME_CONFIG["palette"]["pellet"]),
+            "superPellet": get_color_env(
+                "COLOR_SUPER_PELLET", DEFAULT_GAME_CONFIG["palette"]["superPellet"]
+            ),
+            "border": get_color_env("COLOR_BORDER", DEFAULT_GAME_CONFIG["palette"]["border"]),
+        },
+    }
 
 
 def read_high_score() -> dict:
@@ -57,7 +108,7 @@ def write_high_score(score: int, name: str) -> dict:
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", game_config=game_config())
 
 
 @app.get("/api/highscore")

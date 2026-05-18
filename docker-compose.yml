@@ -11,6 +11,14 @@ services:
     environment:
       - PORT=80
       - HIGH_SCORE_FILE=${HIGH_SCORE_FILE}
+      - MAZE_ROWS=${MAZE_ROWS}
+      - MAZE_COLS=${MAZE_COLS}
+      - COLOR_WALL=${COLOR_WALL}
+      - COLOR_PATH=${COLOR_PATH}
+      - COLOR_PACMAN=${COLOR_PACMAN}
+      - COLOR_PELLET=${COLOR_PELLET}
+      - COLOR_SUPER_PELLET=${COLOR_SUPER_PELLET}
+      - COLOR_BORDER=${COLOR_BORDER}
     volumes:
       - pacman_data:/data
 
