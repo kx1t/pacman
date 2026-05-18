@@ -556,19 +556,22 @@
   function drawGrid() {
     const { cellSize, offsetX, offsetY } = cellMetrics();
 
-    ctx.fillStyle = "#000000";
+    // Wall / non-path areas: dark navy blue
+    ctx.fillStyle = "#0d1047";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Path and ghost-house cells: black (accessible floor)
+    ctx.fillStyle = "#000000";
     for (let y = 0; y < ROWS; y += 1) {
       for (let x = 0; x < COLS; x += 1) {
         const tile = gameState.grid[y][x];
         if (tile === TILE.PATH || tile === TILE.GHOST_HOUSE) {
-          ctx.fillStyle = "#000000";
           ctx.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
         }
       }
     }
 
+    // Ghost house interior fill (slightly inset)
     ctx.fillStyle = "#000000";
     for (let y = gameState.ghostHouse.top; y <= gameState.ghostHouse.bottom; y += 1) {
       for (let x = gameState.ghostHouse.left; x <= gameState.ghostHouse.right; x += 1) {
@@ -578,6 +581,36 @@
           Math.max(1, cellSize - 2),
           Math.max(1, cellSize - 2)
         );
+      }
+    }
+
+    // Thin white border lines along every path↔wall edge
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    for (let y = 0; y < ROWS; y += 1) {
+      for (let x = 0; x < COLS; x += 1) {
+        const tile = gameState.grid[y][x];
+        if (tile !== TILE.PATH && tile !== TILE.GHOST_HOUSE) {
+          continue;
+        }
+        const px = offsetX + x * cellSize;
+        const py = offsetY + y * cellSize;
+        // Left edge
+        if (x === 0 || (gameState.grid[y][x - 1] !== TILE.PATH && gameState.grid[y][x - 1] !== TILE.GHOST_HOUSE)) {
+          ctx.beginPath(); ctx.moveTo(px + 0.5, py); ctx.lineTo(px + 0.5, py + cellSize); ctx.stroke();
+        }
+        // Right edge
+        if (x === COLS - 1 || (gameState.grid[y][x + 1] !== TILE.PATH && gameState.grid[y][x + 1] !== TILE.GHOST_HOUSE)) {
+          ctx.beginPath(); ctx.moveTo(px + cellSize - 0.5, py); ctx.lineTo(px + cellSize - 0.5, py + cellSize); ctx.stroke();
+        }
+        // Top edge
+        if (y === 0 || (gameState.grid[y - 1][x] !== TILE.PATH && gameState.grid[y - 1][x] !== TILE.GHOST_HOUSE)) {
+          ctx.beginPath(); ctx.moveTo(px, py + 0.5); ctx.lineTo(px + cellSize, py + 0.5); ctx.stroke();
+        }
+        // Bottom edge
+        if (y === ROWS - 1 || (gameState.grid[y + 1][x] !== TILE.PATH && gameState.grid[y + 1][x] !== TILE.GHOST_HOUSE)) {
+          ctx.beginPath(); ctx.moveTo(px, py + cellSize - 0.5); ctx.lineTo(px + cellSize, py + cellSize - 0.5); ctx.stroke();
+        }
       }
     }
 
@@ -599,7 +632,7 @@
       const [x, y] = key.split(",").map(Number);
       const isSuper = gameState.superPellets.has(key);
       const radius = isSuper ? cellSize * 0.16 : cellSize * 0.08;
-      ctx.fillStyle = isSuper ? "#ff3333" : "#ff69b4";
+      ctx.fillStyle = isSuper ? "#ff0000" : "#ff80c8";
       ctx.beginPath();
       ctx.arc(
         offsetX + x * cellSize + cellSize / 2,
