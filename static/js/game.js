@@ -1107,7 +1107,8 @@
   nameSubmit.addEventListener("click", submitHighScoreName);
 
   difficultyDisplay.addEventListener("click", () => {
-    if (!gameState || gameState.gameOver || !startBtn.classList.contains("hidden")) {
+    // Only prevent opening if game is actively in progress
+    if (gameState && !gameState.gameOver && startBtn.classList.contains("hidden")) {
       return;
     }
     difficultyModal.classList.remove("hidden");
