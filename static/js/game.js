@@ -82,6 +82,7 @@
   const scoreEl = document.getElementById("score");
   const highScoreEl = document.getElementById("high-score");
   const highScorerEl = document.getElementById("high-scorer");
+  const ghostModeEl = document.getElementById("ghost-mode");
   const startBtn = document.getElementById("start-btn");
   const modal = document.getElementById("name-modal");
   const nameInput = document.getElementById("name-input");
@@ -462,10 +463,38 @@
     return true;
   }
 
+  function getCurrentGhostMode() {
+    if (!gameState || gameState.ghosts.length === 0) {
+      return "-";
+    }
+
+    const now = Date.now();
+    const isFlashing = now < gameState.flashingUntil;
+    if (isFlashing) {
+      return "FRIGHT";
+    }
+
+    const modes = new Set();
+    for (const ghost of gameState.ghosts) {
+      if (!ghost.retired) {
+        modes.add(ghost.phaseMode);
+      }
+    }
+
+    if (modes.size === 0) {
+      return "-";
+    }
+    if (modes.size === 1) {
+      return Array.from(modes)[0].toUpperCase();
+    }
+    return Array.from(modes).map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join("/");
+  }
+
   function syncHud() {
     scoreEl.textContent = String(gameState.score);
     highScoreEl.textContent = String(gameState.highScore);
     highScorerEl.textContent = gameState.highScorer;
+    ghostModeEl.textContent = getCurrentGhostMode();
   }
 
   function resizeCanvas() {
@@ -959,6 +988,7 @@
       drawGhost(ghost);
     }
     drawEndOverlay();
+    ghostModeEl.textContent = getCurrentGhostMode();
     animationFrame = requestAnimationFrame(render);
   }
 
