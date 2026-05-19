@@ -9,6 +9,16 @@ def test_index_page_loads():
     assert b"Pacman Simulator" in response.data
 
 
+def test_index_paths_respect_forwarded_prefix():
+    client = app.test_client()
+    response = client.get("/", headers={"X-Forwarded-Prefix": "/pacman"})
+
+    assert response.status_code == 200
+    assert b'href="/pacman/static/css/styles.css"' in response.data
+    assert b'src="/pacman/static/js/game.js"' in response.data
+    assert b'window.HIGH_SCORE_API_URL = "/pacman/api/highscore"' in response.data
+
+
 def test_high_score_defaults_when_missing(monkeypatch, tmp_path):
     monkeypatch.setenv("HIGH_SCORE_FILE", str(tmp_path / "highscore.json"))
     client = app.test_client()

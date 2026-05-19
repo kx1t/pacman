@@ -4,7 +4,7 @@ from pathlib import Path
 from threading import Lock
 import re
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, url_for
 
 
 app = Flask(__name__)
@@ -29,6 +29,26 @@ DEFAULT_GAME_CONFIG = {
 }
 
 HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def forwarded_prefix() -> str:
+    raw = (request.headers.get("X-Forwarded-Prefix") or "").strip()
+    if not raw:
+        return ""
+    if not raw.startswith("/"):
+        raw = f"/{raw}"
+    return raw.rstrip("/")
+
+
+def prefixed_path(path: str) -> str:
+    prefix = forwarded_prefix()
+    if not prefix:
+        return path
+    if path == prefix or path.startswith(f"{prefix}/"):
+        return path
+    if path.startswith("/"):
+        return f"{prefix}{path}"
+    return f"{prefix}/{path}"
 
 
 def high_score_file() -> Path:
@@ -108,7 +128,14 @@ def write_high_score(score: int, name: str) -> dict:
 
 @app.route("/")
 def index():
-    return render_template("index.html", game_config=game_config())
+    return render_template(
+        "index.html",
+        game_config=game_config(),
+        favicon_url=prefixed_path(url_for("static", filename="favicon.svg")),
+        styles_url=prefixed_path(url_for("static", filename="css/styles.css")),
+        game_js_url=prefixed_path(url_for("static", filename="js/game.js")),
+        high_score_api_url=prefixed_path(url_for("get_high_score")),
+    )
 
 
 @app.get("/api/highscore")

@@ -30,6 +30,14 @@
   }
 
   const runtimeConfig = window.GAME_CONFIG || {};
+  const normalizedPath = window.location.pathname.endsWith("/")
+    ? window.location.pathname
+    : `${window.location.pathname}/`;
+  const fallbackHighScoreApiUrl = new URL(
+    "api/highscore",
+    `${window.location.origin}${normalizedPath}`
+  ).toString();
+  const HIGH_SCORE_API_URL = window.HIGH_SCORE_API_URL || fallbackHighScoreApiUrl;
   const ROWS = normalizeDimension(runtimeConfig.rows, DEFAULT_CONFIG.rows);
   const COLS = normalizeDimension(runtimeConfig.cols, DEFAULT_CONFIG.cols);
   const PALETTE = {
@@ -432,7 +440,7 @@
 
   async function fetchHighScore() {
     try {
-      const response = await fetch("/api/highscore", {
+      const response = await fetch(HIGH_SCORE_API_URL, {
         method: "GET",
         headers: { "Accept": "application/json" },
       });
@@ -449,7 +457,7 @@
   }
 
   async function saveHighScore(score, name) {
-    const response = await fetch("/api/highscore", {
+    const response = await fetch(HIGH_SCORE_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

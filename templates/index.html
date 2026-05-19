@@ -10,8 +10,8 @@
     href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
     rel="stylesheet"
   />
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  <link rel="icon" type="image/svg+xml" href="{{ favicon_url }}" />
+  <link rel="stylesheet" href="{{ styles_url }}" />
 </head>
 <body>
   <main class="app-shell">
@@ -52,7 +52,8 @@
 
   <script>
     window.GAME_CONFIG = {{ game_config | tojson }};
+    window.HIGH_SCORE_API_URL = {{ high_score_api_url | tojson }};
   </script>
-  <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+  <script src="{{ game_js_url }}"></script>
 </body>
 </html>
