@@ -29,6 +29,12 @@ body {
   padding: 1.5rem;
 }
 
+@media (pointer: coarse) {
+  body {
+    padding: 0.75rem;
+  }
+}
+
 .app-shell {
   width: min(1100px, 100%);
 }
@@ -128,6 +134,12 @@ body {
     0 0 34px rgba(62, 144, 255, 0.35);
   image-rendering: pixelated;
   background: #0d1047;
+}
+
+@media (pointer: coarse) {
+  #game-canvas {
+    height: min(55vh, 550px);
+  }
 }
 
 #start-btn {
