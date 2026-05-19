@@ -27,6 +27,15 @@
       <canvas id="game-canvas" aria-label="Pacman game board"></canvas>
       <button id="start-btn" type="button">Start Game</button>
     </div>
+
+    <div id="touch-controls" class="touch-controls" aria-label="Touch controls">
+      <button class="touch-control touch-control-up" data-direction="arrowup" type="button" aria-label="Move up">Up</button>
+      <div class="touch-controls-middle">
+        <button class="touch-control touch-control-left" data-direction="arrowleft" type="button" aria-label="Move left">Left</button>
+        <button class="touch-control touch-control-right" data-direction="arrowright" type="button" aria-label="Move right">Right</button>
+      </div>
+      <button class="touch-control touch-control-down" data-direction="arrowdown" type="button" aria-label="Move down">Down</button>
+    </div>
   </main>
 
   <div id="name-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="name-title">

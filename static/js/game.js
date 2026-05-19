@@ -127,6 +127,7 @@
   const fieldSizeCurrent = document.getElementById("field-size-current");
   const applyFieldSizeBtn = document.getElementById("apply-field-size-btn");
   const resetHighScoreBtn = document.getElementById("reset-high-score-btn");
+  const touchControls = document.getElementById("touch-controls");
   const startBtn = document.getElementById("start-btn");
   const modal = document.getElementById("name-modal");
   const nameInput = document.getElementById("name-input");
@@ -147,6 +148,7 @@
   let cachedHighScorer = "N/A";
   let currentDifficulty = localStorage.getItem("pacman-difficulty") || "medium";
   let currentTheme = localStorage.getItem("pacman-theme") || "classic";
+  const touchPointerDirections = new Map();
 
   function randomInt(max) {
     return Math.floor(Math.random() * max);
@@ -200,6 +202,52 @@
 
   function clearDirectionKeys() {
     pressedDirectionKeys = [];
+  }
+
+  function isTouchDevice() {
+    return window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+  }
+
+  function updateTouchControlsVisibility() {
+    if (!touchControls) {
+      return;
+    }
+    document.body.classList.toggle("touch-controls-visible", isTouchDevice());
+  }
+
+  function directionForTouchButton(button) {
+    const key = button?.getAttribute("data-direction");
+    return getDirectionKey(key);
+  }
+
+  function setTouchButtonActive(button, active) {
+    if (!button) {
+      return;
+    }
+    button.classList.toggle("is-active", active);
+  }
+
+  function pressTouchDirection(pointerId, button) {
+    const directionKey = directionForTouchButton(button);
+    if (!directionKey) {
+      return;
+    }
+
+    touchPointerDirections.set(pointerId, directionKey);
+    pressDirectionKey(directionKey);
+    setTouchButtonActive(button, true);
+  }
+
+  function releaseTouchDirection(pointerId) {
+    const directionKey = touchPointerDirections.get(pointerId);
+    if (!directionKey) {
+      return;
+    }
+
+    const button = touchControls?.querySelector(`[data-direction="${directionKey}"]`);
+    releaseDirectionKey(directionKey);
+    setTouchButtonActive(button, false);
+    touchPointerDirections.delete(pointerId);
   }
 
   function createEmptyGrid(value) {
@@ -1228,6 +1276,12 @@
     gameState = initState();
     queuedDirection = DIRS.LEFT;
     pressedDirectionKeys = [];
+    touchPointerDirections.clear();
+    if (touchControls) {
+      touchControls.querySelectorAll(".touch-control").forEach((button) => {
+        button.classList.remove("is-active");
+      });
+    }
     mouthFrames = 0;
     canvas.style.backgroundColor = PALETTE.wall;
     syncHud();
@@ -1291,6 +1345,14 @@
   });
 
   window.addEventListener("blur", clearDirectionKeys);
+  window.addEventListener("blur", () => {
+    touchPointerDirections.clear();
+    if (touchControls) {
+      touchControls.querySelectorAll(".touch-control").forEach((button) => {
+        button.classList.remove("is-active");
+      });
+    }
+  });
 
   startBtn.addEventListener("click", startGame);
 
@@ -1324,8 +1386,41 @@
     settingsModal.classList.add("hidden");
   });
 
+  if (touchControls) {
+    touchControls.addEventListener("pointerdown", (event) => {
+      const button = event.target.closest(".touch-control");
+      if (!button) {
+        return;
+      }
+      event.preventDefault();
+      button.setPointerCapture?.(event.pointerId);
+      pressTouchDirection(event.pointerId, button);
+    });
+
+    touchControls.addEventListener("pointerup", (event) => {
+      const button = event.target.closest(".touch-control");
+      if (button) {
+        setTouchButtonActive(button, false);
+      }
+      releaseTouchDirection(event.pointerId);
+    });
+
+    touchControls.addEventListener("pointercancel", (event) => {
+      releaseTouchDirection(event.pointerId);
+    });
+
+    touchControls.addEventListener("pointerleave", (event) => {
+      if (event.pointerType !== "touch") {
+        return;
+      }
+      releaseTouchDirection(event.pointerId);
+    });
+  }
+
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
+  updateTouchControlsVisibility();
+  window.addEventListener("resize", updateTouchControlsVisibility);
 
   (async () => {
     modal.classList.add("hidden");

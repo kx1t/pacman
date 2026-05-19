@@ -69,6 +69,56 @@ body {
   place-items: center;
 }
 
+.touch-controls {
+  display: none;
+  width: min(420px, 100%);
+  margin: 1rem auto 0;
+  padding: 0.85rem;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-controls-visible .touch-controls {
+  display: grid;
+}
+
+.touch-controls-middle {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.55rem;
+}
+
+.touch-control {
+  border: 2px solid #fff;
+  background: #000;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.68rem;
+  padding: 0.85rem 0.6rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: none;
+  transition: background-color 150ms, color 150ms, transform 150ms;
+}
+
+.touch-control:active,
+.touch-control.is-active {
+  background: var(--accent);
+  color: #000;
+  transform: translateY(1px) scale(0.98);
+}
+
+@media (pointer: coarse) {
+  .touch-controls {
+    display: grid;
+  }
+}
+
 #game-canvas {
   width: min(80vw, 1000px);
   height: min(80vh, 900px);
@@ -257,5 +307,9 @@ body {
 
   #start-btn {
     font-size: 0.62rem;
+  }
+
+  .touch-control {
+    font-size: 0.58rem;
   }
 }
