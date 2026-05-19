@@ -51,20 +51,16 @@ body {
   margin-bottom: 1rem;
 }
 
-.hud-runtime-slot {
+.hud-action-cell {
   text-align: center;
 }
 
-.hud-runtime {
+.run-status {
   display: grid;
-  gap: 0.3rem;
-  justify-items: center;
+  gap: 0.28rem;
   font-size: 0.6rem;
-  text-transform: uppercase;
-}
-
-#game-timer {
-  color: var(--accent);
+  line-height: 1.35;
+  text-align: left;
 }
 
 #settings-btn {

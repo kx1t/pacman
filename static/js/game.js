@@ -85,14 +85,14 @@
   const CHASE_MIN_MS = 15000;
   const CHASE_MAX_MS = 25000;
   const PACMAN_TICK_MS_BY_DIFFICULTY = {
-    easy: 195,
-    medium: 165,
-    hard: 140,
+    relaxed: 190,
+    classic: 165,
+    arcade: 145,
   };
   const GHOST_TICK_MS_BY_DIFFICULTY = {
-    easy: 350,
-    medium: 300,
-    hard: 255,
+    relaxed: 355,
+    classic: 320,
+    arcade: 285,
   };
 
   const TILE = {
@@ -126,9 +126,9 @@
   const highScorerEl = document.getElementById("high-scorer");
   const ghostModeEl = document.getElementById("ghost-mode");
   const settingsBtn = document.getElementById("settings-btn");
-  const runtimeStatusEl = document.getElementById("runtime-status");
-  const difficultyDisplayEl = document.getElementById("difficulty-display");
-  const gameTimerEl = document.getElementById("game-timer");
+  const runStatus = document.getElementById("run-status");
+  const difficultyValueEl = document.getElementById("difficulty-value");
+  const elapsedTimeEl = document.getElementById("elapsed-time");
   const settingsModal = document.getElementById("settings-modal");
   const difficultyBtns = document.querySelectorAll(".difficulty-btn");
   const themeBtns = document.querySelectorAll(".theme-btn");
@@ -157,7 +157,7 @@
   let mouthFrames = 0;
   let cachedHighScore = 0;
   let cachedHighScorer = "N/A";
-  let currentDifficulty = localStorage.getItem("pacman-difficulty") || "medium";
+  let currentDifficulty = localStorage.getItem("pacman-difficulty") || "classic";
   let currentTheme = localStorage.getItem("pacman-theme") || "classic";
   const touchPointerDirections = new Map();
 
@@ -592,6 +592,7 @@
       isRunning: false,
       promptShown: false,
       pendingHighScoreName: false,
+      startedAt: 0,
       highScore: cachedHighScore,
       highScorer: cachedHighScorer,
       pacmanDistanceMap: null,
@@ -670,7 +671,57 @@
   }
 
   function normalizeDifficulty(value) {
-    return ["easy", "medium", "hard"].includes(value) ? value : "medium";
+    if (value === "easy") {
+      return "relaxed";
+    }
+    if (value === "medium") {
+      return "classic";
+    }
+    if (value === "hard") {
+      return "arcade";
+    }
+    return ["relaxed", "classic", "arcade"].includes(value) ? value : "classic";
+  }
+
+  function difficultyLabel(value) {
+    if (value === "relaxed") {
+      return "Relaxed";
+    }
+    if (value === "arcade") {
+      return "Arcade";
+    }
+    return "Classic";
+  }
+
+  function formatElapsedTime(totalMs) {
+    const totalSeconds = Math.max(0, Math.floor(totalMs / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  function isGameInProgress() {
+    return Boolean(gameState) && !gameState.gameOver && startBtn.classList.contains("hidden");
+  }
+
+  function updateRunStatusHud() {
+    if (difficultyValueEl) {
+      difficultyValueEl.textContent = difficultyLabel(currentDifficulty);
+    }
+
+    const inProgress = isGameInProgress();
+    settingsBtn.classList.toggle("hidden", inProgress);
+    if (runStatus) {
+      runStatus.classList.toggle("hidden", !inProgress);
+    }
+
+    if (elapsedTimeEl) {
+      if (inProgress && gameState.startedAt) {
+        elapsedTimeEl.textContent = formatElapsedTime(Date.now() - gameState.startedAt);
+      } else {
+        elapsedTimeEl.textContent = "00:00";
+      }
+    }
   }
 
   function normalizeTheme(value) {
@@ -761,35 +812,7 @@
     highScoreEl.textContent = String(gameState.highScore);
     highScorerEl.textContent = gameState.highScorer;
     ghostModeEl.textContent = getCurrentGhostMode();
-    updateRuntimeHud();
-  }
-
-  function formatElapsedTime(elapsedMs) {
-    const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  }
-
-  function updateRuntimeHud() {
-    if (!settingsBtn || !runtimeStatusEl || !difficultyDisplayEl || !gameTimerEl) {
-      return;
-    }
-
-    const isRunning = Boolean(gameState && gameState.isRunning && !gameState.gameOver);
-    difficultyDisplayEl.textContent = `Difficulty: ${currentDifficulty}`;
-
-    if (isRunning) {
-      settingsBtn.classList.add("hidden");
-      runtimeStatusEl.classList.remove("hidden");
-      const elapsedMs = Date.now() - (gameState.startedAt || Date.now());
-      gameTimerEl.textContent = formatElapsedTime(elapsedMs);
-      return;
-    }
-
-    settingsBtn.classList.remove("hidden");
-    runtimeStatusEl.classList.add("hidden");
-    gameTimerEl.textContent = "00:00";
+    updateRunStatusHud();
   }
 
   function resizeCanvas() {
@@ -829,11 +852,10 @@
   function finishGame({ won, buttonText }) {
     gameState.won = won;
     gameState.gameOver = true;
-    gameState.isRunning = false;
     stopLoop();
     startBtn.textContent = buttonText;
     startBtn.classList.remove("hidden");
-    updateRuntimeHud();
+    updateRunStatusHud();
 
     if (gameState.pendingHighScoreName && !gameState.promptShown) {
       gameState.promptShown = true;
@@ -931,32 +953,32 @@
   }
 
   function getDifficultyRandomness() {
-    if (currentDifficulty === "easy") {
-      return 0.6;
+    if (currentDifficulty === "relaxed") {
+      return 0.72;
     }
-    if (currentDifficulty === "hard") {
-      return 0.2;
+    if (currentDifficulty === "arcade") {
+      return 0.22;
     }
     return 0.5;
   }
 
   function shouldPickRandomMove() {
     const rand = Math.random();
-    if (currentDifficulty === "easy") {
-      return rand < 0.35;
+    if (currentDifficulty === "relaxed") {
+      return rand < 0.45;
     }
-    if (currentDifficulty === "hard") {
-      return rand < 0.08;
+    if (currentDifficulty === "arcade") {
+      return rand < 0.1;
     }
     return rand < 0.2;
   }
 
   function getPacmanTickMs() {
-    return PACMAN_TICK_MS_BY_DIFFICULTY[currentDifficulty] || PACMAN_TICK_MS_BY_DIFFICULTY.medium;
+    return PACMAN_TICK_MS_BY_DIFFICULTY[currentDifficulty] || PACMAN_TICK_MS_BY_DIFFICULTY.classic;
   }
 
   function getGhostTickMs() {
-    return GHOST_TICK_MS_BY_DIFFICULTY[currentDifficulty] || GHOST_TICK_MS_BY_DIFFICULTY.medium;
+    return GHOST_TICK_MS_BY_DIFFICULTY[currentDifficulty] || GHOST_TICK_MS_BY_DIFFICULTY.classic;
   }
 
   function chooseScatterMove(ghost, moves) {
@@ -981,7 +1003,7 @@
 
       const randomness = getDifficultyRandomness();
       const randomBoost = Math.random() * randomness;
-      const difficultyMultiplier = currentDifficulty === "hard" ? 1.5 : currentDifficulty === "easy" ? 0.5 : 1.0;
+      const difficultyMultiplier = currentDifficulty === "arcade" ? 1.35 : currentDifficulty === "relaxed" ? 0.55 : 1.0;
       const score = (awayFromPen * 1.2 + nearestOther * 1.1) * difficultyMultiplier + randomBoost;
       if (score > bestScore) {
         bestScore = score;
@@ -1026,7 +1048,7 @@
       const pacmanDist = Number.isFinite(pathDist)
         ? pathDist
         : Math.abs(gameState.pacman.x - nx) + Math.abs(gameState.pacman.y - ny) + COLS + ROWS;
-      const difficultyMultiplier = currentDifficulty === "hard" ? 1.3 : currentDifficulty === "easy" ? 0.6 : 1.0;
+      const difficultyMultiplier = currentDifficulty === "arcade" ? 1.25 : currentDifficulty === "relaxed" ? 0.65 : 1.0;
       const score = pacmanDist * difficultyMultiplier + Math.random() * getDifficultyRandomness();
       if (score > bestScore) {
         bestScore = score;
@@ -1314,6 +1336,7 @@
     }
     drawEndOverlay();
     ghostModeEl.textContent = getCurrentGhostMode();
+    updateRunStatusHud();
     animationFrame = requestAnimationFrame(render);
   }
 
@@ -1345,6 +1368,7 @@
     }
     mouthFrames = 0;
     canvas.style.backgroundColor = PALETTE.wall;
+    gameState.startedAt = 0;
     syncHud();
   }
 
@@ -1368,13 +1392,11 @@
 
     await fetchHighScore();
     initializeBoard();
+    gameState.startedAt = Date.now();
 
     startBtn.classList.add("hidden");
     modal.classList.add("hidden");
-    settingsModal.classList.add("hidden");
-    gameState.isRunning = true;
-    gameState.startedAt = Date.now();
-    updateRuntimeHud();
+    updateRunStatusHud();
 
     // Render immediately so pellets and super-pellets are visible before movement begins.
     render();
@@ -1446,7 +1468,7 @@
       currentDifficulty = difficulty;
       localStorage.setItem("pacman-difficulty", difficulty);
       setActiveButton(difficultyBtns, "data-difficulty", difficulty);
-      updateRuntimeHud();
+      updateRunStatusHud();
       if (gameState && !gameState.gameOver && startBtn.classList.contains("hidden")) {
         stopLoop();
         startMovementLoops();
@@ -1513,6 +1535,7 @@
     localStorage.setItem("pacman-theme", currentTheme);
     applyTheme(currentTheme, false);
     refreshSettingsSummary();
+    updateRunStatusHud();
     await fetchHighScore();
     initializeBoard();
     render();

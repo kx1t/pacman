@@ -20,11 +20,11 @@
       <div>High Score: <span id="high-score">-</span></div>
       <div>High Scorer: <span id="high-scorer">-</span></div>
       <div><span id="ghost-mode">-</span></div>
-      <div class="hud-runtime-slot">
+      <div class="hud-action-cell">
         <button id="settings-btn" type="button">Settings</button>
-        <div id="runtime-status" class="hud-runtime hidden" aria-live="polite">
-          <span id="difficulty-display">Difficulty: Medium</span>
-          <span id="game-timer">00:00</span>
+        <div id="run-status" class="run-status hidden" aria-live="polite">
+          <div>Difficulty: <span id="difficulty-value">Classic</span></div>
+          <div>Time: <span id="elapsed-time">00:00</span></div>
         </div>
       </div>
     </header>
@@ -60,9 +60,9 @@
       <div class="settings-section">
         <p>Difficulty</p>
         <div class="difficulty-options">
-          <button class="difficulty-btn" data-difficulty="easy" type="button">Easy</button>
-          <button class="difficulty-btn" data-difficulty="medium" type="button">Medium</button>
-          <button class="difficulty-btn" data-difficulty="hard" type="button">Hard</button>
+          <button class="difficulty-btn" data-difficulty="relaxed" type="button">Relaxed</button>
+          <button class="difficulty-btn" data-difficulty="classic" type="button">Classic</button>
+          <button class="difficulty-btn" data-difficulty="arcade" type="button">Arcade</button>
         </div>
       </div>
 
