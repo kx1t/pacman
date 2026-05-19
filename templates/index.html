@@ -20,7 +20,13 @@
       <div>High Score: <span id="high-score">-</span></div>
       <div>High Scorer: <span id="high-scorer">-</span></div>
       <div><span id="ghost-mode">-</span></div>
-      <div style="text-align: center;"><button id="settings-btn" type="button">Settings</button></div>
+      <div class="hud-runtime-slot">
+        <button id="settings-btn" type="button">Settings</button>
+        <div id="runtime-status" class="hud-runtime hidden" aria-live="polite">
+          <span id="difficulty-display">Difficulty: Medium</span>
+          <span id="game-timer">00:00</span>
+        </div>
+      </div>
     </header>
 
     <div class="board-wrap">

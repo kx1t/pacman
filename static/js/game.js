@@ -85,14 +85,14 @@
   const CHASE_MIN_MS = 15000;
   const CHASE_MAX_MS = 25000;
   const PACMAN_TICK_MS_BY_DIFFICULTY = {
-    easy: 170,
-    medium: 145,
-    hard: 125,
+    easy: 195,
+    medium: 165,
+    hard: 140,
   };
   const GHOST_TICK_MS_BY_DIFFICULTY = {
-    easy: 320,
-    medium: 275,
-    hard: 235,
+    easy: 350,
+    medium: 300,
+    hard: 255,
   };
 
   const TILE = {
@@ -126,6 +126,9 @@
   const highScorerEl = document.getElementById("high-scorer");
   const ghostModeEl = document.getElementById("ghost-mode");
   const settingsBtn = document.getElementById("settings-btn");
+  const runtimeStatusEl = document.getElementById("runtime-status");
+  const difficultyDisplayEl = document.getElementById("difficulty-display");
+  const gameTimerEl = document.getElementById("game-timer");
   const settingsModal = document.getElementById("settings-modal");
   const difficultyBtns = document.querySelectorAll(".difficulty-btn");
   const themeBtns = document.querySelectorAll(".theme-btn");
@@ -758,6 +761,35 @@
     highScoreEl.textContent = String(gameState.highScore);
     highScorerEl.textContent = gameState.highScorer;
     ghostModeEl.textContent = getCurrentGhostMode();
+    updateRuntimeHud();
+  }
+
+  function formatElapsedTime(elapsedMs) {
+    const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  function updateRuntimeHud() {
+    if (!settingsBtn || !runtimeStatusEl || !difficultyDisplayEl || !gameTimerEl) {
+      return;
+    }
+
+    const isRunning = Boolean(gameState && gameState.isRunning && !gameState.gameOver);
+    difficultyDisplayEl.textContent = `Difficulty: ${currentDifficulty}`;
+
+    if (isRunning) {
+      settingsBtn.classList.add("hidden");
+      runtimeStatusEl.classList.remove("hidden");
+      const elapsedMs = Date.now() - (gameState.startedAt || Date.now());
+      gameTimerEl.textContent = formatElapsedTime(elapsedMs);
+      return;
+    }
+
+    settingsBtn.classList.remove("hidden");
+    runtimeStatusEl.classList.add("hidden");
+    gameTimerEl.textContent = "00:00";
   }
 
   function resizeCanvas() {
@@ -797,9 +829,11 @@
   function finishGame({ won, buttonText }) {
     gameState.won = won;
     gameState.gameOver = true;
+    gameState.isRunning = false;
     stopLoop();
     startBtn.textContent = buttonText;
     startBtn.classList.remove("hidden");
+    updateRuntimeHud();
 
     if (gameState.pendingHighScoreName && !gameState.promptShown) {
       gameState.promptShown = true;
@@ -1337,6 +1371,10 @@
 
     startBtn.classList.add("hidden");
     modal.classList.add("hidden");
+    settingsModal.classList.add("hidden");
+    gameState.isRunning = true;
+    gameState.startedAt = Date.now();
+    updateRuntimeHud();
 
     // Render immediately so pellets and super-pellets are visible before movement begins.
     render();
@@ -1408,6 +1446,7 @@
       currentDifficulty = difficulty;
       localStorage.setItem("pacman-difficulty", difficulty);
       setActiveButton(difficultyBtns, "data-difficulty", difficulty);
+      updateRuntimeHud();
       if (gameState && !gameState.gameOver && startBtn.classList.contains("hidden")) {
         stopLoop();
         startMovementLoops();
