@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from threading import Lock
 import re
+from typing import Optional
 
 from flask import Flask, jsonify, render_template, request, url_for
 
@@ -73,10 +74,34 @@ def get_color_env(name: str, default: str) -> str:
     return default
 
 
-def game_config() -> dict:
+def normalize_dimension(raw_value: Optional[str], default: int, minimum: int, maximum: int) -> int:
+    if raw_value is None:
+        value = default
+    else:
+        try:
+            value = int(raw_value)
+        except ValueError:
+            value = default
+    clamped = max(minimum, min(maximum, value))
+    if clamped % 2 == 0:
+        clamped -= 1
+    return max(minimum, clamped)
+
+
+def game_config(rows_override: Optional[str] = None, cols_override: Optional[str] = None) -> dict:
     return {
-        "rows": get_int_env("MAZE_ROWS", DEFAULT_GAME_CONFIG["rows"], 21, 61),
-        "cols": get_int_env("MAZE_COLS", DEFAULT_GAME_CONFIG["cols"], 21, 61),
+        "rows": normalize_dimension(
+            rows_override,
+            get_int_env("MAZE_ROWS", DEFAULT_GAME_CONFIG["rows"], 21, 61),
+            21,
+            61,
+        ),
+        "cols": normalize_dimension(
+            cols_override,
+            get_int_env("MAZE_COLS", DEFAULT_GAME_CONFIG["cols"], 21, 61),
+            21,
+            61,
+        ),
         "palette": {
             "wall": get_color_env("COLOR_WALL", DEFAULT_GAME_CONFIG["palette"]["wall"]),
             "path": get_color_env("COLOR_PATH", DEFAULT_GAME_CONFIG["palette"]["path"]),
@@ -128,13 +153,16 @@ def write_high_score(score: int, name: str) -> dict:
 
 @app.route("/")
 def index():
+    rows_override = request.args.get("rows")
+    cols_override = request.args.get("cols")
     return render_template(
         "index.html",
-        game_config=game_config(),
+        game_config=game_config(rows_override=rows_override, cols_override=cols_override),
         favicon_url=prefixed_path(url_for("static", filename="favicon.svg")),
         styles_url=prefixed_path(url_for("static", filename="css/styles.css")),
         game_js_url=prefixed_path(url_for("static", filename="js/game.js")),
         high_score_api_url=prefixed_path(url_for("get_high_score")),
+        reset_high_score_api_url=prefixed_path(url_for("reset_high_score")),
     )
 
 
@@ -166,6 +194,13 @@ def post_high_score():
             current = write_high_score(raw_score, raw_name)
 
     return jsonify(current)
+
+
+@app.post("/api/highscore/reset")
+def reset_high_score():
+    with score_lock:
+        payload = write_high_score(DEFAULT_HIGH_SCORE["score"], DEFAULT_HIGH_SCORE["name"])
+    return jsonify(payload)
 
 
 if __name__ == "__main__":

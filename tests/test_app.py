@@ -19,6 +19,15 @@ def test_index_paths_respect_forwarded_prefix():
     assert b'window.HIGH_SCORE_API_URL = "/pacman/api/highscore"' in response.data
 
 
+def test_index_applies_query_field_size_overrides():
+    client = app.test_client()
+    response = client.get("/?rows=40&cols=52")
+
+    assert response.status_code == 200
+    assert b'"rows": 39' in response.data
+    assert b'"cols": 51' in response.data
+
+
 def test_high_score_defaults_when_missing(monkeypatch, tmp_path):
     monkeypatch.setenv("HIGH_SCORE_FILE", str(tmp_path / "highscore.json"))
     client = app.test_client()
@@ -49,3 +58,20 @@ def test_high_score_rejects_invalid_payload(monkeypatch, tmp_path):
 
     response = client.post("/api/highscore", json={"score": -1, "name": "bad"})
     assert response.status_code == 400
+
+
+def test_high_score_reset_endpoint(monkeypatch, tmp_path):
+    target = tmp_path / "highscore.json"
+    monkeypatch.setenv("HIGH_SCORE_FILE", str(target))
+    client = app.test_client()
+
+    update = client.post("/api/highscore", json={"score": 88, "name": "Player"})
+    assert update.status_code == 200
+
+    reset = client.post("/api/highscore/reset")
+    assert reset.status_code == 200
+    assert reset.get_json() == {"score": 0, "name": "N/A"}
+
+    fetch = client.get("/api/highscore")
+    assert fetch.status_code == 200
+    assert fetch.get_json() == {"score": 0, "name": "N/A"}

@@ -20,7 +20,7 @@
       <div>High Score: <span id="high-score">-</span></div>
       <div>High Scorer: <span id="high-scorer">-</span></div>
       <div><span id="ghost-mode">-</span></div>
-      <div style="text-align: center; cursor: pointer;" id="difficulty-display" title="Click to change difficulty">Medium</div>
+      <div style="text-align: center;"><button id="settings-btn" type="button">Settings</button></div>
     </header>
 
     <div class="board-wrap">
@@ -38,21 +38,52 @@
     </div>
   </div>
 
-  <div id="difficulty-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="difficulty-title">
-    <div class="modal-card">
-      <h2 id="difficulty-title">Select Difficulty</h2>
-      <div class="difficulty-options">
-        <button class="difficulty-btn" data-difficulty="easy">Easy</button>
-        <button class="difficulty-btn" data-difficulty="medium">Medium</button>
-        <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+  <div id="settings-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-card settings-card">
+      <h2 id="settings-title">Settings</h2>
+
+      <div class="settings-section">
+        <p>Difficulty</p>
+        <div class="difficulty-options">
+          <button class="difficulty-btn" data-difficulty="easy" type="button">Easy</button>
+          <button class="difficulty-btn" data-difficulty="medium" type="button">Medium</button>
+          <button class="difficulty-btn" data-difficulty="hard" type="button">Hard</button>
+        </div>
       </div>
-      <button id="difficulty-close" type="button" style="margin-top: 0.8rem;">Close</button>
+
+      <div class="settings-section">
+        <p>Theme</p>
+        <div class="difficulty-options">
+          <button class="theme-btn" data-theme="light" type="button">Light</button>
+          <button class="theme-btn" data-theme="dark" type="button">Dark</button>
+          <button class="theme-btn" data-theme="classic" type="button">Classic</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <p>Field Size</p>
+        <div class="field-size-grid">
+          <label for="settings-rows">Rows</label>
+          <input id="settings-rows" type="number" min="21" max="61" step="2" />
+          <label for="settings-cols">Cols</label>
+          <input id="settings-cols" type="number" min="21" max="61" step="2" />
+        </div>
+        <p id="field-size-current">Current: -</p>
+        <button id="apply-field-size-btn" type="button">Apply Field Size</button>
+      </div>
+
+      <div class="settings-section">
+        <button id="reset-high-score-btn" class="danger-btn" type="button">Reset High Score</button>
+      </div>
+
+      <button id="settings-close" type="button">Close</button>
     </div>
   </div>
 
   <script>
     window.GAME_CONFIG = {{ game_config | tojson }};
     window.HIGH_SCORE_API_URL = {{ high_score_api_url | tojson }};
+    window.RESET_HIGH_SCORE_API_URL = {{ reset_high_score_api_url | tojson }};
   </script>
   <script src="{{ game_js_url }}"></script>
 </body>

@@ -49,6 +49,33 @@
     border: normalizeColor(runtimeConfig?.palette?.border, DEFAULT_CONFIG.palette.border),
   };
 
+  const THEMES = {
+    classic: {
+      "--bg-1": "#02061f",
+      "--bg-2": "#05154f",
+      "--panel": "rgba(4, 14, 54, 0.7)",
+      "--line": "#8be9ff",
+      "--text": "#f1f1f1",
+      "--accent": "#f7d745",
+    },
+    light: {
+      "--bg-1": "#e8eefc",
+      "--bg-2": "#c3d8ff",
+      "--panel": "rgba(255, 255, 255, 0.82)",
+      "--line": "#194ca8",
+      "--text": "#0e1f49",
+      "--accent": "#ffb300",
+    },
+    dark: {
+      "--bg-1": "#040404",
+      "--bg-2": "#151515",
+      "--panel": "rgba(10, 10, 10, 0.78)",
+      "--line": "#6e6e6e",
+      "--text": "#e8e8e8",
+      "--accent": "#f84e4e",
+    },
+  };
+
   const SUPER_PELLET_COUNT = 10;
   const FLASH_DURATION_MS = 20000;
   const GHOST_RESPAWN_MIN_MS = 20000;
@@ -91,14 +118,24 @@
   const highScoreEl = document.getElementById("high-score");
   const highScorerEl = document.getElementById("high-scorer");
   const ghostModeEl = document.getElementById("ghost-mode");
-  const difficultyDisplay = document.getElementById("difficulty-display");
-  const difficultyModal = document.getElementById("difficulty-modal");
+  const settingsBtn = document.getElementById("settings-btn");
+  const settingsModal = document.getElementById("settings-modal");
   const difficultyBtns = document.querySelectorAll(".difficulty-btn");
-  const difficultyClose = document.getElementById("difficulty-close");
+  const themeBtns = document.querySelectorAll(".theme-btn");
+  const settingsClose = document.getElementById("settings-close");
+  const rowsInput = document.getElementById("settings-rows");
+  const colsInput = document.getElementById("settings-cols");
+  const fieldSizeCurrent = document.getElementById("field-size-current");
+  const applyFieldSizeBtn = document.getElementById("apply-field-size-btn");
+  const resetHighScoreBtn = document.getElementById("reset-high-score-btn");
   const startBtn = document.getElementById("start-btn");
   const modal = document.getElementById("name-modal");
   const nameInput = document.getElementById("name-input");
   const nameSubmit = document.getElementById("name-submit");
+  const RESET_HIGH_SCORE_API_URL = window.RESET_HIGH_SCORE_API_URL || new URL(
+    "api/highscore/reset",
+    window.location.href
+  ).toString();
 
   let gameState = null;
   let pacmanTimer = null;
@@ -109,6 +146,7 @@
   let cachedHighScore = 0;
   let cachedHighScorer = "N/A";
   let currentDifficulty = localStorage.getItem("pacman-difficulty") || "medium";
+  let currentTheme = localStorage.getItem("pacman-theme") || "classic";
 
   function randomInt(max) {
     return Math.floor(Math.random() * max);
@@ -503,9 +541,91 @@
     return Array.from(modes).map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join("/");
   }
 
-  function updateDifficultyDisplay() {
-    const capitalizedDifficulty = currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1);
-    difficultyDisplay.textContent = capitalizedDifficulty;
+  function normalizeDifficulty(value) {
+    return ["easy", "medium", "hard"].includes(value) ? value : "medium";
+  }
+
+  function normalizeTheme(value) {
+    return ["light", "dark", "classic"].includes(value) ? value : "classic";
+  }
+
+  function setActiveButton(buttons, attrName, value) {
+    buttons.forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute(attrName) === value);
+    });
+  }
+
+  function applyTheme(theme, persist = true) {
+    const normalized = normalizeTheme(theme);
+    const vars = THEMES[normalized];
+    Object.entries(vars).forEach(([key, val]) => {
+      document.documentElement.style.setProperty(key, val);
+    });
+    currentTheme = normalized;
+    setActiveButton(themeBtns, "data-theme", normalized);
+    if (persist) {
+      localStorage.setItem("pacman-theme", normalized);
+    }
+  }
+
+  function normalizeFieldSizeValue(value, fallback) {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed)) {
+      return fallback;
+    }
+    let clamped = Math.max(21, Math.min(61, parsed));
+    if (clamped % 2 === 0) {
+      clamped -= 1;
+    }
+    return clamped;
+  }
+
+  function refreshSettingsSummary() {
+    rowsInput.value = String(ROWS);
+    colsInput.value = String(COLS);
+    fieldSizeCurrent.textContent = `Current: ${ROWS} x ${COLS}`;
+    setActiveButton(difficultyBtns, "data-difficulty", currentDifficulty);
+    setActiveButton(themeBtns, "data-theme", currentTheme);
+  }
+
+  function applyFieldSizeSetting() {
+    const rows = normalizeFieldSizeValue(rowsInput.value, ROWS);
+    const cols = normalizeFieldSizeValue(colsInput.value, COLS);
+    const target = new URL(window.location.href);
+    target.searchParams.set("rows", String(rows));
+    target.searchParams.set("cols", String(cols));
+    window.location.href = target.toString();
+  }
+
+  async function resetHighScore() {
+    const firstConfirm = window.confirm("Reset high score to 0 (N/A)?");
+    if (!firstConfirm) {
+      return;
+    }
+    const secondConfirm = window.confirm("This cannot be undone. Confirm reset?");
+    if (!secondConfirm) {
+      return;
+    }
+
+    const response = await fetch(RESET_HIGH_SCORE_API_URL, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+    if (!response.ok) {
+      return;
+    }
+    const payload = await response.json();
+    cachedHighScore = Number(payload.score || 0);
+    cachedHighScorer = (payload.name || "N/A").trim() || "N/A";
+
+    if (gameState) {
+      gameState.highScore = cachedHighScore;
+      gameState.highScorer = cachedHighScorer;
+      highScoreEl.textContent = String(cachedHighScore);
+      highScorerEl.textContent = cachedHighScorer;
+    }
   }
 
   function syncHud() {
@@ -513,7 +633,6 @@
     highScoreEl.textContent = String(gameState.highScore);
     highScorerEl.textContent = gameState.highScorer;
     ghostModeEl.textContent = getCurrentGhostMode();
-    updateDifficultyDisplay();
   }
 
   function resizeCanvas() {
@@ -1114,26 +1233,32 @@
 
   nameSubmit.addEventListener("click", submitHighScoreName);
 
-  difficultyDisplay.addEventListener("click", () => {
-    // Only prevent opening if game is actively in progress
-    if (gameState && !gameState.gameOver && startBtn.classList.contains("hidden")) {
-      return;
-    }
-    difficultyModal.classList.remove("hidden");
+  settingsBtn.addEventListener("click", () => {
+    refreshSettingsSummary();
+    settingsModal.classList.remove("hidden");
   });
 
   difficultyBtns.forEach((btn) => {
     btn.addEventListener("click", (event) => {
-      const difficulty = event.target.getAttribute("data-difficulty");
+      const difficulty = normalizeDifficulty(event.target.getAttribute("data-difficulty"));
       currentDifficulty = difficulty;
       localStorage.setItem("pacman-difficulty", difficulty);
-      updateDifficultyDisplay();
-      difficultyModal.classList.add("hidden");
+      setActiveButton(difficultyBtns, "data-difficulty", difficulty);
     });
   });
 
-  difficultyClose.addEventListener("click", () => {
-    difficultyModal.classList.add("hidden");
+  themeBtns.forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      applyTheme(event.target.getAttribute("data-theme"));
+    });
+  });
+
+  applyFieldSizeBtn.addEventListener("click", applyFieldSizeSetting);
+
+  resetHighScoreBtn.addEventListener("click", resetHighScore);
+
+  settingsClose.addEventListener("click", () => {
+    settingsModal.classList.add("hidden");
   });
 
   resizeCanvas();
@@ -1141,8 +1266,13 @@
 
   (async () => {
     modal.classList.add("hidden");
-    difficultyModal.classList.add("hidden");
-    updateDifficultyDisplay();
+    settingsModal.classList.add("hidden");
+    currentDifficulty = normalizeDifficulty(currentDifficulty);
+    currentTheme = normalizeTheme(currentTheme);
+    localStorage.setItem("pacman-difficulty", currentDifficulty);
+    localStorage.setItem("pacman-theme", currentTheme);
+    applyTheme(currentTheme, false);
+    refreshSettingsSummary();
     await fetchHighScore();
     initializeBoard();
     render();
