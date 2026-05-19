@@ -407,15 +407,23 @@
       grid[y][COLS - 2] = TILE.PATH;
     }
 
-    // Enforce stable edge accessibility: every side position, including corners,
-    // is guaranteed to be on or directly next to a reachable corridor.
+    // Enforce side accessibility without forcing long full-edge corridors:
+    // for each side position, either the edge cell or the cell one step inward is a path.
     for (let y = 0; y < ROWS; y += 1) {
-      grid[y][0] = TILE.PATH;
-      grid[y][COLS - 1] = TILE.PATH;
+      if (grid[y][0] !== TILE.PATH && grid[y][1] !== TILE.PATH) {
+        grid[y][1] = TILE.PATH;
+      }
+      if (grid[y][COLS - 1] !== TILE.PATH && grid[y][COLS - 2] !== TILE.PATH) {
+        grid[y][COLS - 2] = TILE.PATH;
+      }
     }
     for (let x = 0; x < COLS; x += 1) {
-      grid[0][x] = TILE.PATH;
-      grid[ROWS - 1][x] = TILE.PATH;
+      if (grid[0][x] !== TILE.PATH && grid[1][x] !== TILE.PATH) {
+        grid[1][x] = TILE.PATH;
+      }
+      if (grid[ROWS - 1][x] !== TILE.PATH && grid[ROWS - 2][x] !== TILE.PATH) {
+        grid[ROWS - 2][x] = TILE.PATH;
+      }
     }
 
     const connected = findConnectedPathCells(grid, gateRows);
