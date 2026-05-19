@@ -141,6 +141,7 @@
   let ghostTimer = null;
   let animationFrame = null;
   let queuedDirection = null;
+  let pressedDirectionKeys = [];
   let mouthFrames = 0;
   let cachedHighScore = 0;
   let cachedHighScorer = "N/A";
@@ -149,6 +150,56 @@
 
   function randomInt(max) {
     return Math.floor(Math.random() * max);
+  }
+
+  function getDirectionKey(key) {
+    const normalized = String(key || "").toLowerCase();
+    return KEY_TO_DIR[normalized] ? normalized : null;
+  }
+
+  function syncQueuedDirectionFromPressedKeys() {
+    if (pressedDirectionKeys.length === 0) {
+      return;
+    }
+    const activeKey = pressedDirectionKeys[0];
+    queuedDirection = KEY_TO_DIR[activeKey];
+  }
+
+  function pressDirectionKey(key) {
+    const normalized = getDirectionKey(key);
+    if (!normalized) {
+      return;
+    }
+
+    if (pressedDirectionKeys.includes(normalized)) {
+      return;
+    }
+
+    pressedDirectionKeys.push(normalized);
+    if (pressedDirectionKeys.length === 1) {
+      queuedDirection = KEY_TO_DIR[normalized];
+    }
+  }
+
+  function releaseDirectionKey(key) {
+    const normalized = getDirectionKey(key);
+    if (!normalized) {
+      return;
+    }
+
+    const releasedIndex = pressedDirectionKeys.indexOf(normalized);
+    if (releasedIndex === -1) {
+      return;
+    }
+
+    pressedDirectionKeys.splice(releasedIndex, 1);
+    if (releasedIndex === 0 && pressedDirectionKeys.length > 0) {
+      syncQueuedDirectionFromPressedKeys();
+    }
+  }
+
+  function clearDirectionKeys() {
+    pressedDirectionKeys = [];
   }
 
   function createEmptyGrid(value) {
@@ -1176,6 +1227,7 @@
   function initializeBoard() {
     gameState = initState();
     queuedDirection = DIRS.LEFT;
+    pressedDirectionKeys = [];
     mouthFrames = 0;
     canvas.style.backgroundColor = PALETTE.wall;
     syncHud();
@@ -1229,9 +1281,16 @@
     if (!KEY_TO_DIR[key]) {
       return;
     }
-    queuedDirection = KEY_TO_DIR[key];
+    pressDirectionKey(key);
     event.preventDefault();
   });
+
+  window.addEventListener("keyup", (event) => {
+    const key = event.key.toLowerCase();
+    releaseDirectionKey(key);
+  });
+
+  window.addEventListener("blur", clearDirectionKeys);
 
   startBtn.addEventListener("click", startGame);
 
