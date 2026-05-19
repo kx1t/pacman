@@ -387,6 +387,12 @@
       grid[y][COLS - 2] = TILE.PATH;
     }
 
+    // Keep all four corners reachable by preserving single-cell edge corridors.
+    for (let y = 0; y < ROWS; y += 1) {
+      grid[y][0] = TILE.PATH;
+      grid[y][COLS - 1] = TILE.PATH;
+    }
+
     const connected = findConnectedPathCells(grid, gateRows);
     for (let y = 0; y < ROWS; y += 1) {
       for (let x = 0; x < COLS; x += 1) {
@@ -1287,6 +1293,18 @@
     syncHud();
   }
 
+  function canRestartFromOverlay() {
+    return !startBtn.classList.contains("hidden") && modal.classList.contains("hidden");
+  }
+
+  function handleRestartRequest(event) {
+    if (!canRestartFromOverlay()) {
+      return;
+    }
+    event?.preventDefault();
+    startGame();
+  }
+
   async function startGame() {
     stopLoop();
     if (animationFrame) {
@@ -1326,8 +1344,7 @@
         return;
       }
       if (!startBtn.classList.contains("hidden")) {
-        event.preventDefault();
-        startGame();
+        handleRestartRequest(event);
         return;
       }
     }
@@ -1354,7 +1371,9 @@
     }
   });
 
-  startBtn.addEventListener("click", startGame);
+  startBtn.addEventListener("click", handleRestartRequest);
+  startBtn.addEventListener("pointerup", handleRestartRequest);
+  canvas.addEventListener("click", handleRestartRequest);
 
   nameSubmit.addEventListener("click", submitHighScoreName);
 
