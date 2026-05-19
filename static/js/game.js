@@ -83,6 +83,10 @@
   const highScoreEl = document.getElementById("high-score");
   const highScorerEl = document.getElementById("high-scorer");
   const ghostModeEl = document.getElementById("ghost-mode");
+  const difficultyDisplay = document.getElementById("difficulty-display");
+  const difficultyModal = document.getElementById("difficulty-modal");
+  const difficultyBtns = document.querySelectorAll(".difficulty-btn");
+  const difficultyClose = document.getElementById("difficulty-close");
   const startBtn = document.getElementById("start-btn");
   const modal = document.getElementById("name-modal");
   const nameInput = document.getElementById("name-input");
@@ -96,6 +100,7 @@
   let mouthFrames = 0;
   let cachedHighScore = 0;
   let cachedHighScorer = "N/A";
+  let currentDifficulty = localStorage.getItem("pacman-difficulty") || "medium";
 
   function randomInt(max) {
     return Math.floor(Math.random() * max);
@@ -490,11 +495,17 @@
     return Array.from(modes).map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join("/");
   }
 
+  function updateDifficultyDisplay() {
+    const capitalizedDifficulty = currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1);
+    difficultyDisplay.textContent = capitalizedDifficulty;
+  }
+
   function syncHud() {
     scoreEl.textContent = String(gameState.score);
     highScoreEl.textContent = String(gameState.highScore);
     highScorerEl.textContent = gameState.highScorer;
     ghostModeEl.textContent = getCurrentGhostMode();
+    updateDifficultyDisplay();
   }
 
   function resizeCanvas() {
@@ -633,6 +644,27 @@
     });
   }
 
+  function getDifficultyRandomness() {
+    if (currentDifficulty === "easy") {
+      return 0.6;
+    }
+    if (currentDifficulty === "hard") {
+      return 0.2;
+    }
+    return 0.5;
+  }
+
+  function shouldPickRandomMove() {
+    const rand = Math.random();
+    if (currentDifficulty === "easy") {
+      return rand < 0.35;
+    }
+    if (currentDifficulty === "hard") {
+      return rand < 0.08;
+    }
+    return rand < 0.2;
+  }
+
   function chooseScatterMove(ghost, moves) {
     const centerX = ghost.homeX;
     const centerY = ghost.homeY;
@@ -653,8 +685,10 @@
         nearestOther = Math.min(nearestOther, distOther);
       }
 
-      const randomBoost = Math.random() * 1.2;
-      const score = awayFromPen * 1.2 + nearestOther * 1.1 + randomBoost;
+      const randomness = getDifficultyRandomness();
+      const randomBoost = Math.random() * randomness;
+      const difficultyMultiplier = currentDifficulty === "hard" ? 1.5 : currentDifficulty === "easy" ? 0.5 : 1.0;
+      const score = (awayFromPen * 1.2 + nearestOther * 1.1) * difficultyMultiplier + randomBoost;
       if (score > bestScore) {
         bestScore = score;
         bestMove = move;
@@ -679,6 +713,10 @@
       }
     }
 
+    if (shouldPickRandomMove()) {
+      bestMove = moves[randomInt(moves.length)];
+    }
+
     return bestMove;
   }
 
@@ -694,7 +732,8 @@
       const pacmanDist = Number.isFinite(pathDist)
         ? pathDist
         : Math.abs(gameState.pacman.x - nx) + Math.abs(gameState.pacman.y - ny) + COLS + ROWS;
-      const score = pacmanDist + Math.random() * 0.8;
+      const difficultyMultiplier = currentDifficulty === "hard" ? 1.3 : currentDifficulty === "easy" ? 0.6 : 1.0;
+      const score = pacmanDist * difficultyMultiplier + Math.random() * getDifficultyRandomness();
       if (score > bestScore) {
         bestScore = score;
         bestMove = move;
@@ -1067,11 +1106,34 @@
 
   nameSubmit.addEventListener("click", submitHighScoreName);
 
+  difficultyDisplay.addEventListener("click", () => {
+    if (!gameState || gameState.gameOver || !startBtn.classList.contains("hidden")) {
+      return;
+    }
+    difficultyModal.classList.remove("hidden");
+  });
+
+  difficultyBtns.forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      const difficulty = event.target.getAttribute("data-difficulty");
+      currentDifficulty = difficulty;
+      localStorage.setItem("pacman-difficulty", difficulty);
+      updateDifficultyDisplay();
+      difficultyModal.classList.add("hidden");
+    });
+  });
+
+  difficultyClose.addEventListener("click", () => {
+    difficultyModal.classList.add("hidden");
+  });
+
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
 
   (async () => {
     modal.classList.add("hidden");
+    difficultyModal.classList.add("hidden");
+    updateDifficultyDisplay();
     await fetchHighScore();
     initializeBoard();
     render();

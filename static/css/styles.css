@@ -35,7 +35,7 @@ body {
 
 .hud {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.65rem;
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -126,6 +126,33 @@ body {
 
 .modal-card input {
   margin-bottom: 0.7rem;
+}
+
+.difficulty-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+.difficulty-btn {
+  border: 2px solid #fff;
+  background: #000;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.7rem;
+  padding: 0.7rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 150ms, color 150ms;
+}
+
+.difficulty-btn:hover {
+  background: #fff;
+  color: #000;
+}
+
+.difficulty-btn:active {
+  transform: scale(0.98);
 }
 
 @keyframes pop-in {

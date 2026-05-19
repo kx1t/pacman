@@ -19,6 +19,7 @@
       <div>High Score: <span id="high-score">-</span></div>
       <div>High Scorer: <span id="high-scorer">-</span></div>
       <div><span id="ghost-mode">-</span></div>
+      <div style="text-align: center; cursor: pointer;" id="difficulty-display" title="Click to change difficulty">Medium</div>
     </header>
 
     <div class="board-wrap">
@@ -33,6 +34,18 @@
       <p>Enter your name:</p>
       <input id="name-input" type="text" maxlength="20" placeholder="Player" />
       <button id="name-submit" type="button">Save</button>
+    </div>
+  </div>
+
+  <div id="difficulty-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="difficulty-title">
+    <div class="modal-card">
+      <h2 id="difficulty-title">Select Difficulty</h2>
+      <div class="difficulty-options">
+        <button class="difficulty-btn" data-difficulty="easy">Easy</button>
+        <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+        <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+      </div>
+      <button id="difficulty-close" type="button" style="margin-top: 0.8rem;">Close</button>
     </div>
   </div>
 
