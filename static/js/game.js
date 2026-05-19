@@ -239,6 +239,31 @@
       stack.push({ x: next.x, y: next.y });
     }
 
+    // Add a small number of safe loops without creating broad corridors.
+    for (let y = 1; y < ROWS - 1; y += 1) {
+      for (let x = 1; x < COLS - 1; x += 1) {
+        if (grid[y][x] !== TILE.WALL) {
+          continue;
+        }
+        if (Math.random() >= 0.08) {
+          continue;
+        }
+
+        const left = grid[y][x - 1] === TILE.PATH;
+        const right = grid[y][x + 1] === TILE.PATH;
+        const up = grid[y - 1][x] === TILE.PATH;
+        const down = grid[y + 1][x] === TILE.PATH;
+        const pathCount = [left, right, up, down].filter(Boolean).length;
+        const oppositeHorizontal = left && right && !up && !down;
+        const oppositeVertical = up && down && !left && !right;
+        const cornerJoin = pathCount === 2 && !oppositeHorizontal && !oppositeVertical;
+
+        if (oppositeHorizontal || oppositeVertical || cornerJoin) {
+          grid[y][x] = TILE.PATH;
+        }
+      }
+    }
+
     const centerTop = Math.floor(ROWS / 2) - 2;
     const centerBottom = Math.floor(ROWS / 2) + 2;
     const centerLeft = Math.floor(COLS / 2) - 4;
@@ -257,6 +282,8 @@
 
     const gateRows = [Math.floor(ROWS / 2) - 1, Math.floor(ROWS / 2) + 1];
     for (const y of gateRows) {
+      grid[y][0] = TILE.PATH;
+      grid[y][COLS - 1] = TILE.PATH;
       grid[y][1] = TILE.PATH;
       grid[y][COLS - 2] = TILE.PATH;
     }
@@ -417,17 +444,17 @@
     return ghosts;
   }
 
-  function applyGateTeleport(entity, gateRows, canUseGates, direction) {
+  function applyGateTeleport(entity, gateRows, canUseGates) {
     if (!canUseGates) {
       return;
     }
     if (!gateRows.includes(entity.y)) {
       return;
     }
-    if (direction === DIRS.LEFT && entity.x === 1) {
-      entity.x = COLS - 2;
-    } else if (direction === DIRS.RIGHT && entity.x === COLS - 2) {
-      entity.x = 1;
+    if (entity.x < 0) {
+      entity.x = COLS - 1;
+    } else if (entity.x > COLS - 1) {
+      entity.x = 0;
     }
   }
 
@@ -699,9 +726,7 @@
       const nx = gameState.pacman.x + queuedDirection.x;
       const ny = gameState.pacman.y + queuedDirection.y;
       const canTurn =
-        ((gameState.pacman.x === 1 && queuedDirection === DIRS.LEFT)
-          || (gameState.pacman.x === COLS - 2 && queuedDirection === DIRS.RIGHT)
-          || nx < 0 || nx >= COLS
+        (nx < 0 || nx >= COLS
           ? gameState.gateRows.includes(gameState.pacman.y)
           : validPacmanCell(gameState.grid, nx, ny));
       if (canTurn) {
@@ -716,12 +741,11 @@
       y: gameState.pacman.y + gameState.pacman.dir.y,
     };
 
-    if (
-      gameState.gateRows.includes(gameState.pacman.y)
-      && ((gameState.pacman.x === 1 && gameState.pacman.dir === DIRS.LEFT)
-        || (gameState.pacman.x === COLS - 2 && gameState.pacman.dir === DIRS.RIGHT))
-    ) {
-      applyGateTeleport(gameState.pacman, gameState.gateRows, true, gameState.pacman.dir);
+    if (next.x < 0 || next.x >= COLS) {
+      if (gameState.gateRows.includes(gameState.pacman.y)) {
+        gameState.pacman.x = next.x;
+        applyGateTeleport(gameState.pacman, gameState.gateRows, true);
+      }
     } else if (validPacmanCell(gameState.grid, next.x, next.y)) {
       gameState.pacman.x = next.x;
       gameState.pacman.y = next.y;
@@ -920,7 +944,7 @@
         ghost.lastDir = bestDir;
       }
 
-      applyGateTeleport(ghost, gameState.gateRows, true, bestDir);
+      applyGateTeleport(ghost, gameState.gateRows, true);
 
       if (
         ghost.y < gameState.ghostHouse.top ||
