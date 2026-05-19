@@ -86,12 +86,12 @@
   const CHASE_MAX_MS = 25000;
   const PACMAN_TICK_MS_BY_DIFFICULTY = {
     relaxed: 190,
-    classic: 165,
+    classic: 180,
     arcade: 145,
   };
   const GHOST_TICK_MS_BY_DIFFICULTY = {
     relaxed: 355,
-    classic: 320,
+    classic: 335,
     arcade: 285,
   };
 
