@@ -84,8 +84,16 @@
   const SCATTER_MAX_MS = 35000;
   const CHASE_MIN_MS = 15000;
   const CHASE_MAX_MS = 25000;
-  const PACMAN_TICK_MS = 110;
-  const GHOST_TICK_MS = 220;
+  const PACMAN_TICK_MS_BY_DIFFICULTY = {
+    easy: 170,
+    medium: 145,
+    hard: 125,
+  };
+  const GHOST_TICK_MS_BY_DIFFICULTY = {
+    easy: 320,
+    medium: 275,
+    hard: 235,
+  };
 
   const TILE = {
     WALL: 0,
@@ -909,6 +917,14 @@
     return rand < 0.2;
   }
 
+  function getPacmanTickMs() {
+    return PACMAN_TICK_MS_BY_DIFFICULTY[currentDifficulty] || PACMAN_TICK_MS_BY_DIFFICULTY.medium;
+  }
+
+  function getGhostTickMs() {
+    return GHOST_TICK_MS_BY_DIFFICULTY[currentDifficulty] || GHOST_TICK_MS_BY_DIFFICULTY.medium;
+  }
+
   function chooseScatterMove(ghost, moves) {
     const centerX = ghost.homeX;
     const centerY = ghost.homeY;
@@ -1278,6 +1294,11 @@
     }
   }
 
+  function startMovementLoops() {
+    pacmanTimer = setInterval(movePacman, getPacmanTickMs());
+    ghostTimer = setInterval(moveGhosts, getGhostTickMs());
+  }
+
   function initializeBoard() {
     gameState = initState();
     queuedDirection = DIRS.LEFT;
@@ -1319,8 +1340,7 @@
 
     // Render immediately so pellets and super-pellets are visible before movement begins.
     render();
-    pacmanTimer = setInterval(movePacman, PACMAN_TICK_MS);
-    ghostTimer = setInterval(moveGhosts, GHOST_TICK_MS);
+    startMovementLoops();
   }
 
   async function submitHighScoreName() {
@@ -1388,6 +1408,10 @@
       currentDifficulty = difficulty;
       localStorage.setItem("pacman-difficulty", difficulty);
       setActiveButton(difficultyBtns, "data-difficulty", difficulty);
+      if (gameState && !gameState.gameOver && startBtn.classList.contains("hidden")) {
+        stopLoop();
+        startMovementLoops();
+      }
     });
   });
 
