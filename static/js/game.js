@@ -86,7 +86,6 @@
   const CHASE_MAX_MS = 25000;
   const PACMAN_TICK_MS = 110;
   const GHOST_TICK_MS = 220;
-  const MAZE_FILL_RATE = 0.18;
 
   const TILE = {
     WALL: 0,
@@ -240,18 +239,6 @@
       stack.push({ x: next.x, y: next.y });
     }
 
-    // Add a few loops to avoid a strict tree maze.
-    for (let y = 1; y < ROWS - 1; y += 1) {
-      for (let x = 1; x < COLS - 1; x += 1) {
-        if (grid[y][x] === TILE.WALL && Math.random() < MAZE_FILL_RATE) {
-          const around = neighbors4(x, y).filter((n) => grid[n.y][n.x] === TILE.PATH).length;
-          if (around >= 2) {
-            grid[y][x] = TILE.PATH;
-          }
-        }
-      }
-    }
-
     const centerTop = Math.floor(ROWS / 2) - 2;
     const centerBottom = Math.floor(ROWS / 2) + 2;
     const centerLeft = Math.floor(COLS / 2) - 4;
@@ -270,8 +257,6 @@
 
     const gateRows = [Math.floor(ROWS / 2) - 1, Math.floor(ROWS / 2) + 1];
     for (const y of gateRows) {
-      grid[y][0] = TILE.PATH;
-      grid[y][COLS - 1] = TILE.PATH;
       grid[y][1] = TILE.PATH;
       grid[y][COLS - 2] = TILE.PATH;
     }
@@ -432,17 +417,17 @@
     return ghosts;
   }
 
-  function applyGateTeleport(entity, gateRows, canUseGates) {
+  function applyGateTeleport(entity, gateRows, canUseGates, direction) {
     if (!canUseGates) {
       return;
     }
     if (!gateRows.includes(entity.y)) {
       return;
     }
-    if (entity.x < 0) {
-      entity.x = COLS - 1;
-    } else if (entity.x > COLS - 1) {
-      entity.x = 0;
+    if (direction === DIRS.LEFT && entity.x === 1) {
+      entity.x = COLS - 2;
+    } else if (direction === DIRS.RIGHT && entity.x === COLS - 2) {
+      entity.x = 1;
     }
   }
 
@@ -714,7 +699,9 @@
       const nx = gameState.pacman.x + queuedDirection.x;
       const ny = gameState.pacman.y + queuedDirection.y;
       const canTurn =
-        (nx < 0 || nx >= COLS
+        ((gameState.pacman.x === 1 && queuedDirection === DIRS.LEFT)
+          || (gameState.pacman.x === COLS - 2 && queuedDirection === DIRS.RIGHT)
+          || nx < 0 || nx >= COLS
           ? gameState.gateRows.includes(gameState.pacman.y)
           : validPacmanCell(gameState.grid, nx, ny));
       if (canTurn) {
@@ -729,11 +716,12 @@
       y: gameState.pacman.y + gameState.pacman.dir.y,
     };
 
-    if (next.x < 0 || next.x >= COLS) {
-      if (gameState.gateRows.includes(gameState.pacman.y)) {
-        gameState.pacman.x = next.x;
-        applyGateTeleport(gameState.pacman, gameState.gateRows, true);
-      }
+    if (
+      gameState.gateRows.includes(gameState.pacman.y)
+      && ((gameState.pacman.x === 1 && gameState.pacman.dir === DIRS.LEFT)
+        || (gameState.pacman.x === COLS - 2 && gameState.pacman.dir === DIRS.RIGHT))
+    ) {
+      applyGateTeleport(gameState.pacman, gameState.gateRows, true, gameState.pacman.dir);
     } else if (validPacmanCell(gameState.grid, next.x, next.y)) {
       gameState.pacman.x = next.x;
       gameState.pacman.y = next.y;
@@ -932,6 +920,8 @@
         ghost.lastDir = bestDir;
       }
 
+      applyGateTeleport(ghost, gameState.gateRows, true, bestDir);
+
       if (
         ghost.y < gameState.ghostHouse.top ||
         ghost.y > gameState.ghostHouse.bottom ||
@@ -1008,16 +998,6 @@
       penHeight * cellSize - 1
     );
     ctx.setLineDash([]);
-
-    // Side tunnels: draw outward openings so gateways read as open passages.
-    ctx.fillStyle = PALETTE.path;
-    for (const gateY of gameState.gateRows) {
-      const tunnelY = offsetY + gateY * cellSize;
-      const tunnelH = Math.max(2, cellSize);
-      const lip = Math.max(3, Math.floor(cellSize * 0.45));
-      ctx.fillRect(offsetX - lip, tunnelY, lip + 1, tunnelH);
-      ctx.fillRect(offsetX + COLS * cellSize - 1, tunnelY, lip + 1, tunnelH);
-    }
 
     // Thin white border lines along every path↔wall edge
     ctx.strokeStyle = PALETTE.border;
