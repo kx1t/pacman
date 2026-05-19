@@ -16,7 +16,7 @@ def test_index_paths_respect_forwarded_prefix():
     assert response.status_code == 200
     assert b'href="/pacman/static/css/styles.css"' in response.data
     assert b'src="/pacman/static/js/game.js"' in response.data
-    assert b'window.HIGH_SCORE_API_URL = "/pacman/api/highscore"' in response.data
+    assert b'data-high-score-api-url="/pacman/api/highscore"' in response.data
 
 
 def test_index_applies_query_field_size_overrides():
@@ -24,8 +24,8 @@ def test_index_applies_query_field_size_overrides():
     response = client.get("/?rows=40&cols=52")
 
     assert response.status_code == 200
-    assert b'"rows": 39' in response.data
-    assert b'"cols": 51' in response.data
+    assert b'&#34;rows&#34;: 39' in response.data
+    assert b'&#34;cols&#34;: 51' in response.data
 
 
 def test_high_score_defaults_when_missing(monkeypatch, tmp_path):

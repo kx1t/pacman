@@ -29,7 +29,15 @@
     return /^#[0-9a-fA-F]{6}$/.test(text) ? text.toLowerCase() : fallback;
   }
 
-  const runtimeConfig = window.GAME_CONFIG || {};
+  const bootConfigEl = document.getElementById("boot-config");
+  let runtimeConfig = {};
+  try {
+    runtimeConfig = bootConfigEl?.dataset?.gameConfig
+      ? JSON.parse(bootConfigEl.dataset.gameConfig)
+      : (window.GAME_CONFIG || {});
+  } catch (_err) {
+    runtimeConfig = window.GAME_CONFIG || {};
+  }
   const normalizedPath = window.location.pathname.endsWith("/")
     ? window.location.pathname
     : `${window.location.pathname}/`;
@@ -37,7 +45,8 @@
     "api/highscore",
     `${window.location.origin}${normalizedPath}`
   ).toString();
-  const HIGH_SCORE_API_URL = window.HIGH_SCORE_API_URL || fallbackHighScoreApiUrl;
+  const HIGH_SCORE_API_URL =
+    bootConfigEl?.dataset?.highScoreApiUrl || window.HIGH_SCORE_API_URL || fallbackHighScoreApiUrl;
   const ROWS = normalizeDimension(runtimeConfig.rows, DEFAULT_CONFIG.rows);
   const COLS = normalizeDimension(runtimeConfig.cols, DEFAULT_CONFIG.cols);
   const PALETTE = {
@@ -143,10 +152,10 @@
   const modal = document.getElementById("name-modal");
   const nameInput = document.getElementById("name-input");
   const nameSubmit = document.getElementById("name-submit");
-  const RESET_HIGH_SCORE_API_URL = window.RESET_HIGH_SCORE_API_URL || new URL(
-    "api/highscore/reset",
-    window.location.href
-  ).toString();
+  const RESET_HIGH_SCORE_API_URL =
+    bootConfigEl?.dataset?.resetHighScoreApiUrl
+    || window.RESET_HIGH_SCORE_API_URL
+    || new URL("api/highscore/reset", window.location.href).toString();
 
   let gameState = null;
   let pacmanTimer = null;

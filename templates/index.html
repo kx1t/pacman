@@ -95,11 +95,13 @@
     </div>
   </div>
 
-  <script>
-    window.GAME_CONFIG = {{ game_config | tojson }};
-    window.HIGH_SCORE_API_URL = {{ high_score_api_url | tojson }};
-    window.RESET_HIGH_SCORE_API_URL = {{ reset_high_score_api_url | tojson }};
-  </script>
+  <div
+    id="boot-config"
+    hidden
+    data-game-config='{{ game_config | tojson | forceescape }}'
+    data-high-score-api-url="{{ high_score_api_url }}"
+    data-reset-high-score-api-url="{{ reset_high_score_api_url }}"
+  ></div>
   <script src="{{ game_js_url }}"></script>
 </body>
 </html>
